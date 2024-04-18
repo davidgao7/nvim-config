@@ -41,4 +41,26 @@ return {
       },
     },
   },
+  {
+    "nvim-telescope/telescope-file-browser.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/plenary.nvim" },
+    keys = {
+      {
+        "<leader>fi",
+        function()
+          require("telescope").setup({
+            defaults = {
+              layout_config = {
+                horizontal = {
+                  preview_cutoff = 0,
+                },
+              },
+            },
+          })
+          require("telescope").extensions.file_browser.file_browser()
+        end,
+        desc = "file browser",
+      },
+    },
+  },
 }
