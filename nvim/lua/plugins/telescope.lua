@@ -26,6 +26,15 @@ return {
         --     },
         --   },
         -- },
+        -- view media files
+        extensions = {
+          media_files = {
+            -- filetypes whitelist
+            -- defaults to {"png", "jpg", "mp4", "webm", "pdf"}
+            filetypes = { "png", "jpg", "gif", "mp4", "webm", "pdf" },
+            find_cmd = "chafa", -- find command (defaults to `fd`)
+          },
+        },
       })
       -- Enable Telescope extensions if they are installed
       pcall(require("telescope").load_extension, "fzf")
@@ -109,6 +118,19 @@ return {
           require("telescope.builtin").current_buffer_fuzzy_find()
         end,
         desc = "search current buffer",
+      },
+    },
+  },
+  {
+    "nvim-telescope/telescope-media-files.nvim",
+    dependencies = { "nvim-telescope/telescope.nvim", "nvim-lua/popup.nvim", "nvim-lua/plenary.nvim" },
+    keys = {
+      {
+        "<leader>fd",
+        function()
+          require("telescope").extensions.media_files.media_files()
+        end,
+        desc = "copy media files path",
       },
     },
   },
