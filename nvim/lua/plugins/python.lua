@@ -1,5 +1,4 @@
 return {
-  -- Add `pyright` to mason
   -- TODO: check following tools -> mypy types-requests types-docutils
   {
     "williamboman/mason.nvim",
@@ -7,7 +6,8 @@ return {
       -- vim.list_extend(opts.ensure_installed, { "pyright", "black", "ruff-lsp", "ruff" })
       vim.list_extend(opts.ensure_installed, {
         "black",
-        "ruff",
+        "pyright",
+        "debugpy",
       })
     end,
   },
@@ -32,19 +32,42 @@ return {
   -- Setup `neotest`
   {
     "nvim-neotest/neotest",
-    optional = true,
     dependencies = {
       "nvim-neotest/neotest-python",
     },
-    opts = {
-      adapters = {
-        ["neotest-python"] = {
-          -- Here you can specify the settings for the adapter, i.e.
-          runner = "pytest",
-          -- python = ".venv/bin/python",
+    config = function()
+      require("neotest").setup({
+        adapters = {
+          require("neotest-python")({
+            -- Extra arguments for nvim-dap configuration
+            -- See https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for values
+            dap = { justMyCode = false },
+            -- Command line arguments for runner
+            -- Can also be a function to return dynamic values
+            args = { "--log-level", "DEBUG" },
+            -- Runner to use. Will use pytest if available by default.
+            -- Can be a function to return dynamic value.
+            runner = "pytest",
+            -- Custom python path for the runner.
+            -- Can be a string or a list of strings.
+            -- Can also be a function to return dynamic value.
+            -- If not provided, the path will be inferred by checking for
+            -- virtual envs in the local directory and for Pipenev/Poetry configs
+            python = function()
+              return vim.fn.input("Python executable path: ex. /usr/bin/python3: ")
+            end, -- ask user python execuable path
+            -- Returns if a given file path is a test file.
+            -- NB: This function is called a lot so don't perform any heavy tasks within it.
+            is_test_file = function(file_path)
+              return file_path:match("test_.*%.py$") ~= nil
+            end,
+            -- !!EXPERIMENTAL!! Enable shelling out to `pytest` to discover test
+            -- instances for files containing a parametrize mark (default: false)
+            pytest_discover_instances = false,
+          }),
         },
-      },
-    },
+      })
+    end,
   },
 
   -- Add `server` and setup lspconfig
@@ -53,23 +76,17 @@ return {
     dependencies = {},
     opts = {
       servers = {
-        -- pyright = {},
-        ruff_lsp = {
-          -- handlers = {
-          --   ["textDocument/publishDiagnostics"] = function() end,
-          -- },
+        pyright = {
+          python = {
+            analysis = {
+              autoSearchPaths = true,
+              diagnosticMode = "workspace",
+              useLibraryCodeForTypes = true,
+            },
+          },
         },
-        jedi_language_server = {},
       },
       setup = {
-        ruff_lsp = function()
-          require("lazyvim.util").lsp.on_attach(function(client, _)
-            if client.name == "ruff_lsp" then
-              -- Disable hover in favor of Pyright
-              client.server_capabilities.hoverProvider = false
-            end
-          end)
-        end,
         pyright = function()
           require("lazyvim.util").lsp.on_attach(function(client, _)
             if client.name == "pyright" then
@@ -88,7 +105,7 @@ return {
     optional = true,
     opts = {
       formatters_by_ft = {
-        ["python"] = { { "black", "ruff" } },
+        ["python"] = { { "black" } },
       },
     },
   },
