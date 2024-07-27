@@ -32,9 +32,9 @@ return {
       config = function()
         -- local path = require("mason-registry").get_package("debugpy"):get_install_path()
         -- require("dap-python").setup("/Users/tengjungao/anaconda3/envs/changan_project/bin/python")
-        require("dap-python").resolve_python = function()
-          return ""
-        end
+        -- require("dap-python").resolve_python = function()
+        --   return ""
+        -- end
         local dap = require("dap")
         local dapui = require("dapui")
 
@@ -82,6 +82,16 @@ return {
         dap.configurations.rust = dap.configurations.cpp
       end,
     },
+  },
+  {
+    "leoluz/nvim-dap-go",
+    dependencies = {
+      "mfussenegger/nvim-dap",
+      "rcarriga/nvim-dap-ui",
+    },
+    config = function()
+      require("dap-go").setup()
+    end,
   },
   {
     "linux-cultist/venv-selector.nvim",
