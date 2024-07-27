@@ -1,3 +1,14 @@
+function get_python_path(root_dir)
+  local lfs = require("lfs")
+  local current_dir = lfs.currentdir() -- Save the current directory
+  lfs.chdir(root_dir) -- Change to the root directory
+  local handle = io.popen("which python") -- Run 'which python' command
+  local result = handle:read("*a") -- Read the result
+  handle:close() -- Close the handle
+  lfs.chdir(current_dir) -- Change back to the original directory
+  return result:match("^%s*(.-)%s*$") -- Trim the result and return
+end
+
 return {
   {
     "neovim/nvim-lspconfig",
@@ -96,12 +107,47 @@ return {
                   semicolon = "Disable",
                   arrayIndex = "Disable",
                 },
-              },
-              -- using ruff's import organizer
-              pyright = {
-                disableOrganizeImports = true,
+                format = {
+                  enable = true,
+                  defaultConfig = {
+                    indent_style = "space",
+                    indent_size = "4",
+                  },
+                },
               },
             },
+          },
+          pyright = {
+            capabilities = (function()
+              local capabilities = vim.lsp.protocol.make_client_capabilities()
+              capabilities.textDocument.publishDiagnostics.tagSupport.valueSet = { 2 }
+              return capabilities
+            end)(),
+            settings = {
+              python = {
+                analysis = {
+                  useLibraryCodeForTypes = true,
+                  diagnosticSeverityOverrides = {
+                    reportUnusedVariable = "warning", -- or anything
+                  },
+                  typeCheckingMode = "basic",
+                },
+              },
+            },
+          },
+          ruff = {
+            keys = {
+              {
+                "<leader>co",
+                LazyVim.lsp.action["source.organizeImports"],
+                desc = "Organize Imports",
+              },
+            },
+          },
+          ruff_lsp = {
+            on_attach = function(client, _)
+              client.server_capabilities.hoverProvider = false
+            end,
           },
         },
         -- you can do any additional lsp server setup here
@@ -115,6 +161,18 @@ return {
           -- end,
           -- Specify * to use this function as a fallback for any server
           -- ["*"] = function(server, opts) end,
+          -- fix clangd offset encoding
+          clangd = function(_, opts)
+            local capabilities = vim.lsp.protocol.make_client_capabilities()
+            capabilities.offsetEncoding = { "utf-8", "utf-16" }
+            opts.servers.clangd.capabilities = capabilities
+          end,
+          ruff = function()
+            LazyVim.lsp.on_attach(function(client, _)
+              -- Disable hover in favor of Pyright
+              client.server_capabilities.hoverProvider = false
+            end, _)
+          end,
         },
       }
     end,
@@ -255,5 +313,15 @@ return {
         end)
       end
     end,
+  },
+  {
+    "jose-elias-alvarez/null-ls.nvim",
+    event = "VeryLazy",
+    ops = {
+      sources = {
+        require("null-ls").builtins.formatting.clang_format,
+        require("null-ls").builtins.formatting.ruff,
+      },
+    },
   },
 }
