@@ -2,6 +2,10 @@
 -- * disable/enabled LazyVim plugins
 -- * override the configuration of LazyVim plugins
 -- disable trouble
-return {
-  { "semshi", enabled = false },
-}
+--
+-- IT DOES NOT WORK
+-- return {
+--   { "semshi", enabled = false },
+--   { "neocmake", enabled = false },
+--   { "venv-select", enabled = false },
+-- }
