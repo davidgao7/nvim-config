@@ -20,5 +20,7 @@ return {
     -- <leader>g is taken by git actions
     keys[#keys + 1] = { "<leader>ci", vim.lsp.buf.definition, desc = "Go to Definition", mode = "n" }
     keys[#keys + 1] = { "<leader>ck", vim.lsp.buf.references, desc = "Find References", mode = "n" }
+    -- the move widown right is missing
+    keys[#keys + 1] = { "<C-l>", "<C-w>l", desc = "Move to the right window", mode = "n" }
   end,
 }
