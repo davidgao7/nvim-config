@@ -168,4 +168,40 @@ return {
       table.insert(opts.sorting.comparators, 1, require("clangd_extensions.cmp_scores"))
     end,
   },
+  
+  -- snippets
+  {
+    "rafamadriz/friendly-snippets",
+  },
+
+  -- cpp man from cplusplus.com and cppreference.com without ever leaving neovim
+  {
+    "madskjeldgaard/cppman.nvim",
+    dependencies = {
+      { "MunifTanjim/nui.nvim" },
+    },
+    config = function()
+      local cppman = require("cppman")
+      cppman.setup()
+
+      -- -- Make a keymap to open the word under cursor in CPPman
+      -- vim.keymap.set("n", "<leader>cp", function()
+      --   cppman.open_cppman_for(vim.fn.expand("<cword>"))
+      -- end)
+      --
+      -- -- Open search box
+      -- vim.keymap.set("n", "<leader>cc", function()
+      --   cppman.input()
+      -- end)
+    end,
+    keys = {
+      {
+        "<leader>cp",
+        "<cmd>lua require('cppman').open_cppman_for(vim.fn.expand('<cword>'))<cr>",
+        desc = "Open cppman for word under cursor",
+      },
+      { "<leader>cb", "<cmd>lua require('cppman').input()<cr>", desc = "Open cppman search box" },
+    },
+  },
+
 }
