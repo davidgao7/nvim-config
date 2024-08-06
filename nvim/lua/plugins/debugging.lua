@@ -1,198 +1,288 @@
 -- Setup adapters as nvim-dap dependencies
 return {
-  {
-    "folke/which-key.nvim",
-    opts = {
-      defaults = {
-        ["<leader>dP"] = { name = "Python+" },
-      },
-    },
-  },
-  {
-    "mfussenegger/nvim-dap",
-    dependencies = {
-      "mfussenegger/nvim-dap-python",
-      {
-        "kmontocam/nvim-conda",
-        dependencies = { "nvim-lua/plenary.nvim" },
-      },
-      {
-        "rcarriga/nvim-dap-ui",
-        dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
-      },
-    -- stylua: ignore
-    keys = {
-      { "<leader>dPw", function() require('dap-python').repl.open() end, desc = "Open dap widgets"},
-      { "<leader>dPi", function() require('dap-python').step_into() end, desc = "Debug step_into"},
-      { "<leader>dPc", function() require('dap-python').continue() end, desc = "Debug continue"},
-      { "<leader>dPb", function() require('dap-python').toggle_breakpoint() end, desc = "Toggle Breakpoint"},
-      { "<leader>dPm", function() require('dap-python').test_method() end, desc = "Debug Method" },
-      { "<leader>dPC", function() require('dap-python').test_class() end,  desc = "Debug Class" },
-    },
-      config = function()
-        -- local path = require("mason-registry").get_package("debugpy"):get_install_path()
-        -- require("dap-python").setup("/Users/tengjungao/anaconda3/envs/changan_project/bin/python")
-        -- require("dap-python").resolve_python = function()
-        --   return ""
-        -- end
-        local dap = require("dap")
-        local dapui = require("dapui")
+	{
+		"mfussenegger/nvim-dap",
+		recommended = true,
+		desc = "Debugging support. Requires language specific adapters to be configured. (see lang extras)",
 
-        dap.listeners.before.attach.dapui_config = function()
-          dapui.open()
-        end
+		dependencies = {
+			"rcarriga/nvim-dap-ui",
+			-- virtual text for the debugger
+			{
+				"theHamsta/nvim-dap-virtual-text",
+				opts = {},
+			},
+		},
+		{
+			"williamboman/mason-nvim-dap.nvim", -- DAP specific extensions for mason.nvim
+			dependencies = "mason.nvim",
+			cmd = { "DapInstall", "DapUninstall" },
+			opts = {
+				-- Makes a best effort to setup the various debuggers with
+				-- reasonable debug configurations
+				automatic_installation = true,
 
-        dap.listeners.before.launch.dapui_config = function()
-          dapui.open()
-        end
+				-- You'll need to check that you have the required things installed
+				-- online, please don't ask me how to install them :)
+				ensure_installed = {
+					-- Update this to ensure that you have the debuggers for the langs you want
+					"stylua",
+					"jq",
+					"debugpy",
+					"delve",
+					"lldb-vscode",
+					"jdtls",
+				},
 
-        dap.listeners.before.event_terminated.dapui_config = function()
-          dapui.close()
-        end
+				-- You can provide additional configuration to the handlers,
+				-- see mason-nvim-dap README for more information
+				handlers = {
+					function(config)
+						-- all sources with no handler get passed here
 
-        dap.listeners.before.event_exited.dapui_config = function()
-          dapui.close()
-        end
+						-- Keep original functionality
+						require("mason-nvim-dap").default_setup(config)
+					end,
+					python = function(config)
+						config.adapters = {
+							type = "executable",
+							command = require("venv-selector").python() or "python",
+							args = {
+								"-m",
+								"debugpy.adapter",
+							},
+						}
+						require("mason-nvim-dap").default_setup(config) -- don't forget this!
+					end,
+				},
+			},
+		},
+		config = function()
+			-- debug breakpoint
+			vim.fn.sign_define("DapBreakpoint", { text = "🔴", texthl = "Error", linehl = "", numhl = "" })
+			-- debug current line arrow
+			vim.fn.sign_define("DapStopped", { text = "➤", texthl = "Search", linehl = "", numhl = "" })
+			require("mason").setup()
+			require("mason-nvim-dap").setup({
+				automatic_installation = true,
+				ensure_installed = { "debugpy", "delve", "lldb-vscode", "jdtls" }, -- List debug adapters for Python, Go, C++, Java
+			})
+			require("dapui").setup()
+			require("nvim-dap-virtual-text").setup()
 
-        vim.keymap.set("n", "<Leader>dt", dap.toggle_breakpoint, {})
-        vim.keymap.set("n", "<Leader>dc", dap.continue, {})
+			-- load mason-nvim-dap here, after all adapters have been setup
+			if LazyVim.has("mason-nvim-dap.nvim") then
+				require("mason-nvim-dap").setup(LazyVim.opts("mason-nvim-dap.nvim"))
+			end
 
-        -- cpp debugging
-        dap.adapters.cppdbg = {
-          id = "cppdbg",
-          type = "executable",
-          command = "OpenDebugAD7",
-          options = {
-            detached = false,
-          },
-        }
-        dap.configurations.cpp = {
-          {
-            name = "Launch file",
-            type = "cppdbg",
-            request = "launch",
-            program = function()
-              return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
-            end,
-            cwd = "${workspaceFolder}",
-            stopOnEntry = false,
-          },
-        }
-        dap.configurations.c = dap.configurations.cpp
-        dap.configurations.rust = dap.configurations.cpp
-      end,
-    },
-  },
-  {
-    "leoluz/nvim-dap-go",
-    dependencies = {
-      "mfussenegger/nvim-dap",
-      "rcarriga/nvim-dap-ui",
-    },
-    config = function()
-      require("dap-go").setup()
-    end,
-  },
-  {
-    "linux-cultist/venv-selector.nvim",
-    dependencies = {
-      "neovim/nvim-lspconfig",
-      "nvim-telescope/telescope.nvim",
-      "mfussenegger/nvim-dap-python",
-      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-    },
-    branch = "regexp",
-    config = function()
-      -- This function gets called by the plugin when a new result from fd is received
-      -- You can change the filename displayed here to what you like. Here in the example we remove the /bin/python part.
-      local function remove_last_part(filename)
-        return filename:gsub("/bin/python", ""):gsub("/Users/tengjungao/anaconda3/envs/", "")
-      end
+			vim.api.nvim_set_hl(0, "DapStoppedLine", { default = true, link = "Visual" })
 
-      local function on_venv_activate()
-        local command_run = false
+			for name, sign in pairs(LazyVim.config.icons.dap) do
+				sign = type(sign) == "table" and sign or { sign }
+				vim.fn.sign_define(
+					"Dap" .. name,
+					{ text = sign[1], texthl = sign[2] or "DiagnosticInfo", linehl = sign[3], numhl = sign[3] }
+				)
+			end
+		end,
 
-        local function run_shell_command()
-          local source = require("venv-selector").source() -- anaconda_base
-          local python = require("venv-selector").python():gsub("/bin/python", "") -- /Users/tengjungao/anaconda3/envs/llmstreamlit/bin/python 1
-          for i in string.gmatch(python, "%S+") do -- /Users/tengjungao/anaconda3/envs/llmstreamlit/bin/python
-            if string.find(i, "anaconda3/envs") then
-              python = i
-            end
-          end
-          -- string.find(source, "conda")  return a number
-          vim.notify("python: ", python, "info", { title = "Venv Selector" })
+		keys = {
+			{ "<leader>d", "", desc = "+debug", mode = { "n", "v" } },
+			{
+				"<leader>dB",
+				function()
+					require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
+				end,
+				desc = "Breakpoint Condition",
+			},
+			{
+				"<leader>db",
+				function()
+					require("dap").toggle_breakpoint()
+				end,
+				desc = "Toggle Breakpoint",
+			},
+			{
+				"<leader>dc",
+				function()
+					require("dap").continue()
+				end,
+				desc = "Continue",
+			},
+			{
+				"<leader>da",
+				function()
+					require("dap").continue({
+						before = function()
+							return vim.fn.input("args: ")
+						end,
+					})
+				end,
+				desc = "Run with Args",
+			},
+			{
+				"<leader>dC",
+				function()
+					require("dap").run_to_cursor()
+				end,
+				desc = "Run to Cursor",
+			},
+			{
+				"<leader>dg",
+				function()
+					require("dap").goto_()
+				end,
+				desc = "Go to Line (No Execute)",
+			},
+			{
+				"<leader>di",
+				function()
+					require("dap").step_into()
+				end,
+				desc = "Step Into",
+			},
+			{
+				"<leader>dj",
+				function()
+					require("dap").down()
+				end,
+				desc = "Down",
+			},
+			{
+				"<leader>dk",
+				function()
+					require("dap").up()
+				end,
+				desc = "Up",
+			},
+			{
+				"<leader>dl",
+				function()
+					require("dap").run_last()
+				end,
+				desc = "Run Last",
+			},
+			{
+				"<leader>do",
+				function()
+					require("dap").step_out()
+				end,
+				desc = "Step Out",
+			},
+			{
+				"<leader>dO",
+				function()
+					require("dap").step_over()
+				end,
+				desc = "Step Over",
+			},
+			{
+				"<leader>dp",
+				function()
+					require("dap").pause()
+				end,
+				desc = "Pause",
+			},
+			{
+				"<leader>dr",
+				function()
+					require("dap").repl.toggle()
+				end,
+				desc = "Toggle REPL",
+			},
+			{
+				"<leader>ds",
+				function()
+					require("dap").session()
+				end,
+				desc = "Session",
+			},
+			{
+				"<leader>dt",
+				function()
+					require("dap").terminate()
+				end,
+				desc = "Terminate",
+			},
+			{
+				"<leader>dw",
+				function()
+					require("dap.ui.widgets").hover()
+				end,
+				desc = "Widgets",
+			},
+		},
+	},
 
-          -- different source has different command to activate the venv
-          if string.find(source, "poetry") and command_run == false then
-            local command = "poetry env use " .. python
-            vim.notify("Poetry venv activated", "info", { title = "Venv Selector" })
-            vim.api.nvim_feedkeys(command .. "\n", "n", false)
-            command_run = true
-          elseif string.find(source, "conda") and command_run == false then
-            vim.cmd("CondaActivate " .. remove_last_part(source))
-            command_run = true
-          elseif string.find(source, "venv") and command_run == false then
-            local command = "source " .. python .. "/bin/activate"
-            vim.notify("Venv activated", "info", { title = "Venv Selector" })
-            vim.api.nvim_feedkeys(command .. "\n", "n", false)
-            command_run = true
-          end
-        end
+	--  NOTE: python
+	{
+		"mfussenegger/nvim-dap-python",
+		dependencies = {
+			"mfussenegger/nvim-dap",
+			"williamboman/mason.nvim",
+			"williamboman/mason-nvim-dap.nvim",
+		},
+		config = function()
+			local python_path = function()
+				return require("venv-selector").get_python_path() or "python"
+			end
+			require("dap-python").setup(python_path())
+			require("dap-python").test_runner = "pytest"
+		end,
+	},
 
-        vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
+	-- NOTE: cpp
+	{
+		"mfussenegger/nvim-dap",
+		optional = true,
+		dependencies = {
+			"williamboman/mason.nvim",
+			"williamboman/mason-nvim-dap.nvim",
+			optional = true,
+			opts = { ensure_installed = { "codelldb" } },
+		},
+		opts = function()
+			local dap = require("dap")
+			dap.adapters.codelldb = {
+				type = "server",
+				host = "localhost",
+				port = "${port}",
+				executable = {
+					command = "codelldb",
+					args = { "--port", "${port}" },
+				},
+			}
+			dap.configurations.cpp = {
+				{
+					type = "codelldb",
+					request = "launch",
+					name = "Launch file",
+					program = function()
+						return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+					end,
+					cwd = "${workspaceFolder}",
+				},
+				{
+					type = "codelldb",
+					request = "attach",
+					name = "Attach to process",
+					pid = require("dap.utils").pick_process,
+					cwd = "${workspaceFolder}",
+				},
+			}
+		end,
+	},
 
-        vim.api.nvim_create_autocmd("TermEnter", {
-          group = "TerminalCommands",
-          pattern = "*",
-          callback = run_shell_command,
-        })
-      end
-
-      require("venv-selector").setup({
-        settings = {
-          options = {
-            -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
-            on_telescope_result_callback = remove_last_part,
-            -- activate the venv
-            on_venv_activate_callback = on_venv_activate,
-          },
-
-          search = {
-            -- -- If you know that your venvs are in a specific location, you can also disable the default cwd search and write your own:
-            -- cwd = false, -- setting this to false disables the default cwd search
-            -- my_venvs = {
-            --   command = "fd bin/python$ /Users/tengjungao/anaconda3/envs --full-path --color never -E /proc", -- Sample command, need to be changed for your own venvs
-            --
-            --   -- If you put the callback here, its only called for your "my_venvs" search
-            --   on_telescope_result_callback = remove_last_part,
-            -- },
-            -- If you need to create your own anaconda search, you have to remember to set the type to "anaconda".
-            anaconda_base = {
-              command = "fd bin/python$ /Users/tengjungao/anaconda3/envs --full-path --color never -E /proc",
-              type = "anaconda",
-            },
-          },
-        },
-      })
-    end,
-    opts = {
-      debug = false, -- enables you to run the VenvSelectLog command to view debug logs
-      on_telescope_result_callback = nil, -- callback function for when a search result shows up in telescope
-      on_venv_activate_callback = nil, -- callback function for when a venv is activated
-      fd_binary_name = nil, -- plugin looks for `fd` or `fdfind` but you can set something else here
-      enable_default_searches = true, -- switches all default searches on/off
-      enable_cached_venvs = true, -- automatically activates the venv you used last time in a directory
-      activate_venv_in_terminal = true, -- activate the selected python interpreter in terminal windows opened from neovim
-      set_environment_variables = true, -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-      show_telescope_search_type = true, -- shows the name of the search in telescope
-      notify_user_on_venv_activation = false, -- notifies user on activation of the virtual env
-      search_timeout = 5,
-    },
-    event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-    keys = {
-      -- Keymap to open VenvSelector to pick a venv.
-      { "<leader>cv", "<cmd>VenvSelect<cr>", desc = "Select VirtualEnv", ft = "python" },
-    },
-  },
+	-- NOTE: go
+	{
+		"leoluz/nvim-dap-go",
+		dependencies = {
+			"mfussenegger/nvim-dap",
+			"williamboman/mason.nvim",
+			"williamboman/mason-nvim-dap.nvim",
+		},
+		config = function()
+			require("dap-go").setup()
+		end,
+	},
 }
