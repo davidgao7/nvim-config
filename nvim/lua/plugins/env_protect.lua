@@ -34,4 +34,7 @@ return {
 			},
 		})
 	end,
+	keys = {
+		{ "<leader>ct", "<cmd>CloakToggle<CR>", desc = "toggle env value" },
+	},
 }
