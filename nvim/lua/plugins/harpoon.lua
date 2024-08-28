@@ -63,7 +63,7 @@ return {
 				"<leader>n",
 				function()
 					local harpoon = require("harpoon")
-					harpoon:list():next({ ui_nav_wrap = true }) -- enable cycling throught list
+					harpoon:list():next({ ui_nav_wrap = true }) -- enable cycling through list
 				end,
 				desc = "harpoon to next file",
 			},
@@ -71,7 +71,7 @@ return {
 				"<leader>m",
 				function()
 					local harpoon = require("harpoon")
-					harpoon:list():next({ ui_nav_wrap = true }) -- enable cycling throught list
+					harpoon:list():next({ ui_nav_wrap = true }) -- enable cycling through list
 				end,
 				desc = "harpoon to previous file",
 			},
