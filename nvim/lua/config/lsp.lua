@@ -115,6 +115,28 @@ return {
 							diagnostics = true,
 						},
 					},
+					zls = {
+						-- [[
+						-- ↓ zig_exe_path
+						--   Zig executable path, e.g. `/path/to/zig/zig`, used to run the custom build runner. If `null`, zig is looked up in `PATH`. Will be used to infer the zig standard library path if none is provided
+						--   type string
+						-- ↓ zig_lib_path
+						--   Zig library path, e.g. `/path/to/zig/lib/zig`, used to analyze std library imports
+						--   type string
+						-- ]]
+						settings = {
+							cmd = { "~/.local/share/nvim/mason/bin/zls" },
+							zig_exe_path = "~/.zig/zig",
+							zig_lib_path = "~/.zig/lib/",
+							filetypes = { "zig", "zir" },
+							root_dir = function(fname)
+								local nvim_lsp = require("nvim_lsp")
+								return nvim_lsp.util.root_pattern("zls.json", "build.zig", ".git")(fname)
+									or nvim_lsp.util.path.dirname(fname)
+							end,
+							single_file_support = true,
+						},
+					},
 				},
 				-- you can do any additional lsp server setup here
 				-- return true if you don't want this server to be setup with lspconfig
@@ -199,11 +221,13 @@ return {
 
 			local servers = opts.servers
 			local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
+			local has_blink, blink = pcall(require, "blink.cmp")
 			local capabilities = vim.tbl_deep_extend(
 				"force",
 				{},
 				vim.lsp.protocol.make_client_capabilities(),
 				has_cmp and cmp_nvim_lsp.default_capabilities() or {},
+				has_blink and blink.get_lsp_capabilities() or {},
 				opts.capabilities or {}
 			)
 
