@@ -28,3 +28,15 @@ vim.api.nvim_create_autocmd("BufRead", {
     vim.wo.listchars = "tab:▸ ,trail:·,extends:❯,precedes:❮,nbsp:·,eol:¬"
   end,
 })
+
+-- nvim-cmp sql completion
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "sql", "mysql", "plsql", "pgsql", "sqlite" },
+  callback = function()
+    require("cmp").setup.buffer({
+      sources = {
+        { name = "vim-dadbod-completion" },
+      },
+    })
+  end,
+})
