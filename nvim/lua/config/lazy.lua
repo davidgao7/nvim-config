@@ -1,50 +1,83 @@
+-- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  -- bootstrap lazy.nvim
-  -- stylua: ignore
-  vim.fn.system({ "git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", lazypath })
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+    local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+    local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+    if vim.v.shell_error ~= 0 then
+        vim.api.nvim_echo({
+            { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+            { out,                            "WarningMsg" },
+            { "\nPress any key to exit..." },
+        }, true, {})
+        vim.fn.getchar()
+        os.exit(1)
+    end
 end
-vim.opt.rtp:prepend(vim.env.LAZY or lazypath)
+vim.opt.rtp:prepend(lazypath)
 
+-- Make sure to setup `mapleader` and `maplocalleader` before
+-- loading lazy.nvim so that mappings are correct.
+-- This is also a good place to setup other settings (vim.opt)
+require("config.options")
+
+-- Setup lazy.nvim
 require("lazy").setup({
-
-  spec = {
-    -- add LazyVim and import its plugins
-    { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-    -- import any extras modules here
-    { import = "lazyvim.plugins.extras.lang.typescript" },
-    { import = "lazyvim.plugins.extras.lang.json" },
-    -- no laggy animations
-    -- { import = "lazyvim.plugins.extras.ui.mini-animate" },
-    -- import/override with your plugins
-    { import = "plugins" },
-  },
-
-  defaults = {
-    -- By default, only LazyVim plugins will be lazy-loaded. Your custom plugins will load during startup.
-    -- If you know what you're doing, you can set this to `true` to have all your custom plugins lazy-loaded by default.
-    lazy = false,
-    -- It's recommended to leave version=false for now, since a lot the plugin that support versioning,
-    -- have outdated releases, which may break your Neovim install.
-    version = false, -- always use the latest git commit
-    -- version = "*", -- try installing the latest stable version for plugins that support semver
-  },
-
-  install = { colorscheme = { "tokyonight" } },
-  checker = { enabled = true }, -- automatically check for plugin updates
-  performance = {
-    rtp = {
-      -- disable some rtp plugins
-      disabled_plugins = {
-        "gzip",
-        -- "matchit",
-        -- "matchparen",
-        -- "netrwPlugin",
-        "tarPlugin",
-        "tohtml",
-        "tutor",
-        "zipPlugin",
-      },
+    spec = {
+        -- import your plugins
+        { import = "plugins" },
     },
-  },
+    -- Configure any other settings here. See the documentation for more details.
+    -- colorscheme that will be used when installing plugins.
+    -- install = { colorscheme = { "catppuccin" } },
+    -- automatically check for plugin updates
+    checker = { enabled = true },
 })
+
+-- gather all the keymaps after loading plugins
+-- search keymaps with fzf
+-- Function to fetch keymaps and display them in fzf-lua
+local function keymap_fzf()
+    local keymaps = {}                                       -- Stores all keymaps
+    local modes = { "n", "i", "v", "x", "s", "o", "t", "c" } -- Modes to include
+
+    -- Fetch keymaps for each mode
+    for _, mode in ipairs(modes) do
+        for _, map in ipairs(vim.api.nvim_get_keymap(mode)) do
+            local lhs = map.lhs
+            local rhs = map.rhs or "[N/A]"
+            local desc = map.desc or ""
+            local line = string.format("[%s] %s -> %s %s", mode, lhs, rhs, desc)
+            table.insert(keymaps, line)
+        end
+    end
+
+    -- make sure my fzf-lua is loaded
+    require("plugins.fzf")
+    -- Use fzf-lua to display and search keymaps
+    require("fzf-lua").fzf_exec(keymaps, {
+        prompt = "Keymaps> ",
+        previewer = function(item)
+            -- Display selected keymap in preview window
+            return vim.fn.systemlist(string.format("echo '%s'", item))
+        end,
+        actions = {
+            ["default"] = function(selected)
+                -- Print or highlight the selected keymap
+                print("Print keymap: " .. selected[1])
+            end,
+        },
+    })
+end
+
+-- If you still want fallback behavior (e.g., for non-LSP buffers),
+-- but don’t want to see "No information available," suppress the message using a custom handler.
+vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
+    silent = true, -- Suppress "No information available" messages
+})
+-- Keymap to trigger the keymap search
+vim.keymap.set("n", "<leader>sk", keymap_fzf, { desc = "Search Keymaps with fzf-lua" })
+-- Map <Esc> to clear search highlight and keep its default behavior
+vim.keymap.set("n", "<Esc>", "<cmd>noh<CR><Esc>", { desc = "Clear search highlights" })
+vim.keymap.set("i", "<Esc>", "<Esc>", { desc = "Exit insert mode" })
+vim.keymap.set("v", "<Esc>", "<Esc>", { desc = "Exit visual mode" })
+vim.keymap.set("n", "<leader>l", "<cmd>Lazy<cr>", { desc = "Lazy plugin manager" })

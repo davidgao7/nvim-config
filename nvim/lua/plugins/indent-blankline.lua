@@ -1,48 +1,62 @@
 return {
-  {
-    "lukas-reineke/indent-blankline.nvim",
-    main = "ibl",
-    opts = {},
-    char = "",
-    context_char = "│",
-    show_current_context = false,
-    show_current_context_start = false,
-    max_indent_increase = 1,
-    show_trailing_blankline_indent = false,
-    config = function()
-      -- if you want to highlight scop , uncomment this
-      --  local highlight_colors = {
-      --    "RainbowRed",
-      --    "RainbowYellow",
-      --    "RainbowBlue",
-      --    "RainbowOrange",
-      --    "RainbowGreen",
-      --    "RainbowViolet",
-      --    "RainbowCyan",
-      --      }
-      --      local hooks = require("ibl.hooks")
-      --      -- create the highlight groups in the highlight setup hook, so they are reset
-      --      -- every time the colorscheme changes
-      --      hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-      --        vim.api.nvim_set_hl(0, "RainbowRed", { fg = "#E06C75" })
-      --        vim.api.nvim_set_hl(0, "RainbowYellow", { fg = "#E5C07B" })
-      --        vim.api.nvim_set_hl(0, "RainbowBlue", { fg = "#61AFEF" })
-      --        vim.api.nvim_set_hl(0, "RainbowOrange", { fg = "#D19A66" })
-      --        vim.api.nvim_set_hl(0, "RainbowGreen", { fg = "#98C379" })
-      --        vim.api.nvim_set_hl(0, "RainbowViolet", { fg = "#C678DD" })
-      --        vim.api.nvim_set_hl(0, "RainbowCyan", { fg = "#56B6C2" })
-      --      end)
-      --
-      require("ibl").setup({
-        --indent = {
-        --  char = "|",
-        --},
-        whitespace = {
-          highlight = "IblWhitespace",
-          remove_blankline_trail = false,
+    {
+        "folke/snacks.nvim",
+        priority = 1000,
+        lazy = false,
+        opts = {
+            -- your configuration comes here
+            -- or leave it empty to use the default settings
+            -- refer to the configuration section below
+            bigfile = { enabled = false },
+            dashboard = { enabled = false },
+            indent = { enabled = true },
+            input = { enabled = false },
+            notifier = { enabled = false },
+            quickfile = { enabled = false },
+            scroll = { enabled = false },
+            statuscolumn = { enabled = false },
+            words = { enabled = false },
         },
-        scope = { enabled = false },
-      })
-    end,
-  },
-}
+    },
+    {
+        "lukas-reineke/indent-blankline.nvim",
+        opts = function()
+            Snacks = require("snacks")
+            Snacks.toggle({
+                name = "Indention Guides",
+                get = function()
+                    return require("ibl.config").get_config(0).enabled
+                end,
+                set = function(state)
+                    require("ibl").setup_buffer(0, { enabled = state })
+                end,
+            }):map("<leader>ug")
+
+            return {
+                indent = {
+                    char = "│",
+                    tab_char = "│",
+                },
+                scope = { show_start = false, show_end = false },
+                exclude = {
+                    filetypes = {
+                        "Trouble",
+                        "alpha",
+                        "dashboard",
+                        "help",
+                        "lazy",
+                        "mason",
+                        "neo-tree",
+                        "notify",
+                        "snacks_dashboard",
+                        "snacks_notif",
+                        "snacks_terminal",
+                        "snacks_win",
+                        "toggleterm",
+                        "trouble",
+                    },
+                },
+            }
+        end,
+        main = "ibl",
+    } }

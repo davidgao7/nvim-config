@@ -1,11 +1,24 @@
--- tailwindcss config
-local tw = {
-    default_config = {
-        filetypes = { "html", "css", "javascript", "typescript", "vue", "svelte", "php", "markdown", "htmldjango" },
-    }
-}
+local function is_loaded(name)
+    local Config = require("lazy.core.config")
+    return Config.plugins[name] and Config.plugins[name]._.loaded
+end
 
-local ts_ops = {
+---@generic T
+---@param list T[]
+---@return T[]
+local function dedup(list)
+    local ret = {}
+    local seen = {}
+    for _, v in ipairs(list) do
+        if not seen[v] then
+            table.insert(ret, v)
+            seen[v] = true
+        end
+    end
+    return ret
+end
+
+local treesitter_opts = {
     highlight = { enable = true },
     indent = { enable = true },
     ensure_installed = {
@@ -29,7 +42,6 @@ local ts_ops = {
         "toml",
         "tsx",
         "typescript",
-        "css",
         "vim",
         "vimdoc",
         "xml",
@@ -57,81 +69,6 @@ local ts_ops = {
 
 return {
     {
-        "neovim/nvim-lspconfig",
-        opts = {
-            servers = {
-                tailwindcss = {
-                    -- exclude a filetype from the default_config
-                    filetypes_exclude = { "markdown" },
-                    -- add additional filetypes to the default_config
-                    filetypes_include = {},
-                    -- to fully override the default_config, change the below
-                    -- filetypes = {}
-                },
-            },
-            setup = {
-                tailwindcss = function(_, opts)
-                    opts.filetypes = opts.filetypes or {}
-
-                    -- Add default filetypes
-                    vim.list_extend(opts.filetypes, tw.default_config.filetypes)
-
-                    -- Remove excluded filetypes
-                    --- @param ft string
-                    opts.filetypes = vim.tbl_filter(function(ft)
-                        return not vim.tbl_contains(opts.filetypes_exclude or {}, ft)
-                    end, opts.filetypes)
-
-                    -- Additional settings for Phoenix projects
-                    opts.settings = {
-                        tailwindCSS = {
-                            includeLanguages = {
-                                elixir = "html-eex",
-                                eelixir = "html-eex",
-                                heex = "html-eex",
-                            },
-                        },
-                    }
-
-                    -- Add additional filetypes
-                    vim.list_extend(opts.filetypes, opts.filetypes_include or {})
-                end,
-            },
-        },
-    },
-    {
-        "hrsh7th/nvim-cmp",
-        optional = true,
-        dependencies = {
-            { "roobert/tailwindcss-colorizer-cmp.nvim", opts = {} },
-        },
-        opts = function(_, opts)
-            -- original LazyVim kind icon formatter
-            local format_kinds = opts.formatting.format
-            opts.formatting.format = function(entry, item)
-                format_kinds(entry, item) -- add icons
-                return require("tailwindcss-colorizer-cmp").formatter(entry, item)
-            end
-        end,
-    },
-
-    -- display the color you mention
-    {
-        "echasnovski/mini.hipatterns",
-        version = '*',
-        event = "BufReadPre",
-        opts = function()
-            local hipatterns = require("mini.hipatterns")
-            return {
-                highlighters = {
-                    hex_color = hipatterns.gen_highlighter.hex_color(),
-                },
-            }
-        end,
-    },
-
-    -- install treesitter
-    {
         "folke/which-key.nvim",
         opts = {
             spec = {
@@ -140,6 +77,10 @@ return {
             },
         },
     },
+
+    -- Treesitter is a new parser generator tool that we can
+    -- use in Neovim to power faster and more accurate
+    -- syntax highlighting.
     {
         "nvim-treesitter/nvim-treesitter",
         version = false, -- last release is way too old and doesn't work on Windows
@@ -163,10 +104,53 @@ return {
         opts_extend = { "ensure_installed" },
         ---@type TSConfig
         ---@diagnostic disable-next-line: missing-fields
-        opts = ts_ops,
+        opts = treesitter_opts,
         ---@param opts TSConfig
         config = function(_, opts)
+            if type(opts.ensure_installed) == "table" then
+                opts.ensure_installed = dedup(opts.ensure_installed)
+            end
             require("nvim-treesitter.configs").setup(opts)
         end,
+    },
+
+    {
+        "nvim-treesitter/nvim-treesitter-textobjects",
+        event = "VeryLazy",
+        enabled = true,
+        config = function()
+            -- If treesitter is already loaded, we need to run config again for textobjects
+            if is_loaded("nvim-treesitter") then
+                local opts = treesitter_opts
+                require("nvim-treesitter.configs").setup({ textobjects = opts.textobjects })
+            end
+
+            -- When in diff mode, we want to use the default
+            -- vim text objects c & C instead of the treesitter ones.
+            local move = require("nvim-treesitter.textobjects.move") ---@type table<string,fun(...)>
+            local configs = require("nvim-treesitter.configs")
+            for name, fn in pairs(move) do
+                if name:find("goto") == 1 then
+                    move[name] = function(q, ...)
+                        if vim.wo.diff then
+                            local config = configs.get_module("textobjects.move")[name] ---@type table<string,string>
+                            for key, query in pairs(config or {}) do
+                                if q == query and key:find("[%]%[][cC]") then
+                                    vim.cmd("normal! " .. key)
+                                    return
+                                end
+                            end
+                        end
+                        return fn(q, ...)
+                    end
+                end
+            end
+        end,
+    },
+
+    -- Automatically add closing tags for HTML and JSX
+    {
+        "windwp/nvim-ts-autotag",
+        opts = {},
     },
 }
