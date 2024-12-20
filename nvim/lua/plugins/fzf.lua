@@ -28,11 +28,13 @@ return {
                     -- fullscreen = false, -- ensure floating window
 
                     preview = {
-                        default = "builtin",
-                        hidden = false,     -- always show preview window
+                        default = "bat",
+                        -- hidden = false,     -- always show preview window
                         layout = "flex",    -- auto adjust layout based on space
                         flip_columns = 120, -- adjust layout when terminal width < 120 columns
                         scrollbar = true,   -- show a scrollbar
+                        title = true,
+                        delay = 100,
                         -- configure the builtin previewer to use the custom function
                         builtin = {
                             title = true,
@@ -86,11 +88,6 @@ return {
                 function()
                     require("fzf-lua").files({
                         prompt = "Find Files>",
-                        winopts = {
-                            preview = {
-                                hidden = false, -- always show the preview
-                            },
-                        },
                     })
                 end, { desc = "find files" })
             vim.keymap.set("n", "<leader>fd",
@@ -98,11 +95,6 @@ return {
                     require("fzf-lua").files({
                         cwd = vim.fn.input("dir > "),
                         prompt = "Find Files>",
-                        winopts = {
-                            preview = {
-                                hidden = false, -- always show the preview
-                            },
-                        },
                     })
                 end,
                 { desc = "Find files in dir" })
@@ -119,11 +111,6 @@ return {
             vim.keymap.set("n", "<leader>fc", function()
                 require("fzf-lua").files({
                     prompt = "Find NVIM Config> ",
-                    winopts = {
-                        preview = {
-                            hidden = false, -- always show the preview
-                        },
-                    },
                     cwd = vim.fn.expand("~/.config/nvim/lua/"), -- Set the root directory
                 })
             end, { desc = "Find files in Neovim config" })
