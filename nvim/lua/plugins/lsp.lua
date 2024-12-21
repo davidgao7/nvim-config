@@ -58,6 +58,10 @@ return {
                         Lua = {
                             diagnostics = { globals = { 'vim' } },
                             workspace = { library = vim.api.nvim_get_runtime_file("", true) },
+                            completion = {
+                                callSnippet = 'Disable',
+                                keywordSnippet = 'Disable',
+                            },
                         },
                     },
                 },
@@ -126,7 +130,7 @@ return {
                     -- add additional filetypes to the default_config
                     filetypes_include = {},
                     -- to fully override the default_config, change the below
-                    filetypes = { "html", "css", "javascript", "typescript", "vue", "svelte", "php",  "htmldjango" },
+                    filetypes = { "html", "css", "javascript", "typescript", "vue", "svelte", "php", "htmldjango" },
                     settings = {
                         tailwindCSS = {
                             includeLanguages = {
@@ -195,6 +199,10 @@ return {
                     },
                 },
 
+                -- rust
+                --[[
+                --no need to setup rust-analyzer manually since installed `rustaceanvim`
+                --]]
             },
 
             -- some particular setup steps
@@ -336,7 +344,9 @@ return {
                     local server_opts = opts.servers[server_name] or {}
                     -- vim.notify(server_name .. "  server setup complete!")
                     -- Merge blink.cmp capabilities
-                    server_opts.capabilities = require('blink.cmp').get_lsp_capabilities(server_opts.capabilities)
+                    server_opts.capabilities = require('blink.cmp').get_lsp_capabilities({
+                        textDocument = { completion = { completionItem = { snippetSupport = false } } },
+                    })
                     -- Setup LSP server
                     -- apply lsp servers above in opts.servers[Language]
                     require('lspconfig')[server_name].setup(server_opts)
@@ -375,49 +385,47 @@ return {
             -- add source
             { 'rafamadriz/friendly-snippets' },
         },
+        --[[
+        --Failed to run `config` for blink.cmp
+
+...are/nvim/lazy/blink.cmp/lua/blink/cmp/config/sources.lua:132: attempt to index local 'provider' (a number value)
+
+# stacktrace:
+  - /blink.cmp/lua/blink/cmp/config/sources.lua:132 _in_ **validate_provider**
+  - /blink.cmp/lua/blink/cmp/config/sources.lua:126 _in_ **validate**
+  - /blink.cmp/lua/blink/cmp/config/init.lua:43 _in_ **validate**
+  - /blink.cmp/lua/blink/cmp/config/init.lua:52 _in_ **merge_with**
+  - /blink.cmp/lua/blink/cmp/init.lua:18 _in_ **setup**
+  - .config/nvim/lua/config/lazy.lua:24
+  - .config/nvim/init.lua:1
+
+        --]]
         opts = {
             keymap = { preset = 'default' }, -- fk it enter will only do new line, it's going to do one thing and doing good
             sources = {
-                -- remember to enable your providers here
-                default = { 'lsp', 'path', 'snippets', 'buffer', 'lazydev' },
+                -- Dynamically picking providers by treesitter node/filetype
+                default = function(ctx)
+                    local node = vim.treesitter.get_node()
+                    if vim.bo.filetype == 'lua' then
+                        return { 'lsp', 'path' }
+                    elseif node and vim.tbl_contains({ 'comment', 'line_comment', 'block_comment' }, node:type()) then
+                        return { 'buffer' }
+                    else
+                        return { 'lsp', 'path', 'snippets', 'buffer' }
+                    end
+                end,
                 -- optionally disable cmdline completions
                 -- cmdline = {}
                 -- experimental signature help support
                 -- signature = { enabled = true }
-            },
-
-            -- Additional configuration (optional)
-            experimental = {
-                ghost_text = true, -- Show ghost text (like Copilot suggestions)
-            },
-
-            default = {
-                -- create provider
-                digraphs = {
-                    name = 'digraphs', -- IMPORTANT: use the same name as you would for nvim-cmp
-                    module = 'blink.compat.source',
-
-                    -- all blink.cmp source config options work as normal:
-                    score_offset = -3,
-
-                    opts = {
-                        -- this table is passed directly to the proxied completion source
-                        -- as the `option` field in nvim-cmp's source config
-                        catche_digraphs_on_start = true, -- cache digraphs for faster lookup
-
-                        -- some plugins lazily register their completion source when nvim-cmp is
-                        -- loaded, so pretend that we are nvim-cmp, and that nvim-cmp is loaded.
-                        -- most plugins don't do this, so this option should rarely be needed
-                        -- NOTE: only has effect when using lazy.nvim plugin manager
-                        impersonate_nvim_cmp = true,
-
-                        -- print some debug information. Might be useful for troubleshooting
-                        debug = false,
+                providers = {
+                    lazydev = {
+                        name = "LazyDev",
+                        module = "lazydev.integrations.blink",
+                        -- make lazydev completions top priority (see `:h blink.cmp`)
+                        score_offset = 100,
                     },
                 },
-                -- dont show luals require statements when lazydev has items
-                lsp = { fallback_for = { "lazydev" } },
-                lazydev = { name = "LazyDev", module = "lazydev.integrations.blink" }
             },
         },
     },
@@ -504,5 +512,61 @@ return {
         config = function() end,
         opts = clangd_ext_opts,
     },
+
+    -- rust
+    {
+        "mrcjkb/rustaceanvim",
+        version = "^5", -- recommended
+        -- [[
+        -- It is suggested to pin to tagged releases if you would like to avoid breaking changes.
+        -- ]]
+        tag = "v5.19.2",
+        lazy = false, -- this plugin is already lazy
+        config = function()
+            local bufnr = vim.api.nvim_get_current_buf()
+            -- add some keymaps
+            vim.keymap.set(
+                "n", "<leader>ra",
+                function()
+                    vim.cmd.RustLsp('codeAction') -- supports rust-analyzer's grouping
+                    -- vim.lsp.buf.codeAction() if you don't want grouping
+                end,
+                { silent = true, buffer = bufnr }
+            )
+            vim.keymap.set(
+                "n",
+                "K", -- Override Neovim's built-in hover keymap with rustaceanvim's hover actions
+                function()
+                    vim.cmd.RustLsp({ "hover", "actions" })
+                end,
+                { silent = true, buffer = bufnr }
+            )
+        end
+    },
+
+    -- lua
+    {
+        'saghen/blink.cmp',
+        version = '*',
+        -- !Important! Make sure you're using the latest release of LuaSnip
+        -- `main` does not work at the moment
+        dependencies = { 'L3MON4D3/LuaSnip', version = 'v2.*' },
+        opts = {
+            snippets = {
+                expand = function(snippet) require('luasnip').lsp_expand(snippet) end,
+                active = function(filter)
+                    if filter and filter.direction then
+                        return require('luasnip').jumpable(filter.direction)
+                    end
+                    return require('luasnip').in_snippet()
+                end,
+                jump = function(direction) require('luasnip').jump(direction) end,
+            },
+            sources = {
+                default = { 'lsp', 'path', 'luasnip', 'buffer' },
+            },
+        }
+    }
+
 
 }
