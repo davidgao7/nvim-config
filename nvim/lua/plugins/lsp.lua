@@ -385,21 +385,7 @@ return {
             -- add source
             { 'rafamadriz/friendly-snippets' },
         },
-        --[[
-        --Failed to run `config` for blink.cmp
 
-...are/nvim/lazy/blink.cmp/lua/blink/cmp/config/sources.lua:132: attempt to index local 'provider' (a number value)
-
-# stacktrace:
-  - /blink.cmp/lua/blink/cmp/config/sources.lua:132 _in_ **validate_provider**
-  - /blink.cmp/lua/blink/cmp/config/sources.lua:126 _in_ **validate**
-  - /blink.cmp/lua/blink/cmp/config/init.lua:43 _in_ **validate**
-  - /blink.cmp/lua/blink/cmp/config/init.lua:52 _in_ **merge_with**
-  - /blink.cmp/lua/blink/cmp/init.lua:18 _in_ **setup**
-  - .config/nvim/lua/config/lazy.lua:24
-  - .config/nvim/init.lua:1
-
-        --]]
         opts = {
             keymap = { preset = 'default' }, -- fk it enter will only do new line, it's going to do one thing and doing good
             sources = {
@@ -415,9 +401,9 @@ return {
                     end
                 end,
                 -- optionally disable cmdline completions
-                -- cmdline = {}
+                cmdline = {},
                 -- experimental signature help support
-                -- signature = { enabled = true }
+                -- signature = { enabled = true }, -- doesn't have this field
                 providers = {
                     lazydev = {
                         name = "LazyDev",
@@ -533,14 +519,14 @@ return {
                 end,
                 { silent = true, buffer = bufnr }
             )
-            vim.keymap.set(
-                "n",
-                "K", -- Override Neovim's built-in hover keymap with rustaceanvim's hover actions
-                function()
-                    vim.cmd.RustLsp({ "hover", "actions" })
-                end,
-                { silent = true, buffer = bufnr }
-            )
+            -- vim.keymap.set(
+            --     "n",
+            --     "K",
+            --     function()
+            --         vim.cmd.RustLsp({ "hover", "actions" })
+            --     end,
+            --     { silent = true, buffer = bufnr }
+            -- )
         end
     },
 
@@ -565,6 +551,11 @@ return {
             sources = {
                 default = { 'lsp', 'path', 'luasnip', 'buffer' },
             },
+            completion = {
+                menu = {
+                    auto_show = true
+                }
+            }
         }
     }
 
