@@ -46,10 +46,17 @@ vim.opt.list = true
 vim.opt.mouse = "a"
 
 -- smart indent
--- vim.opt.smartindent = true
+vim.opt.smartindent = true
+
+-- grep case-insensitive
+vim.opt.grepprg = "rg --vimgrep --smart-case"
+-- Ignore case in searches
+vim.o.ignorecase = true
+-- Override ignorecase if the search includes uppercase letters
+vim.o.smartcase = true
 
 -- sync with system clipboard
-vim.opt.clipboard = vim.env.SSH_TTY and "" or "unnamedplus" -- Sync with system clipboard
+-- vim.opt.clipboard = vim.env.SSH_TTY and "" or "unnamedplus" -- Sync with system clipboard
 
 -- show invisible characters
 vim.api.nvim_create_autocmd("BufRead", {
