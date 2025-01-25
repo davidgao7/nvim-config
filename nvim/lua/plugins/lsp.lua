@@ -25,73 +25,38 @@ local clangd_ext_opts = {
 }
 
 return {
-
-    -- {
-    --     "zbirenbaum/copilot.lua",
-    --     cmd = "Copilot",
-    --     event = "InsertEnter",
-    --     config = function()
-    --         require('copilot').setup({
-    --             panel = {
-    --                 enabled = true,
-    --                 auto_refresh = false,
-    --                 keymap = {
-    --                     jump_prev = "<C-p>",
-    --                     jump_next = "<C-n>",
-    --                     accept = "<C-y>",
-    --                     refresh = "gr",
-    --                     open = "K"
-    --                 },
-    --                 layout = {
-    --                     position = "bottom", -- | top | left | right | horizontal | vertical
-    --                     ratio = 0.4
-    --                 },
-    --             },
-    --             suggestion = {
-    --                 enabled = true,
-    --                 auto_trigger = false,
-    --                 hide_during_completion = true,
-    --                 debounce = 75,
-    --                 keymap = {
-    --                     accept = "<M-l>",
-    --                     accept_word = false,
-    --                     accept_line = false,
-    --                     next = "<M-]>",
-    --                     prev = "<M-[>",
-    --                     dismiss = "<C-]>",
-    --                 },
-    --             },
-    --             filetypes = {
-    --                 yaml = true,
-    --                 markdown = true,
-    --                 help = true,
-    --                 gitcommit = true,
-    --                 gitrebase = true,
-    --                 hgcommit = true,
-    --                 svn = true,
-    --                 cvs = true,
-    --                 ["."] = true,
-    --             },
-    --             copilot_node_command = 'node', -- Node.js version must be > 18.x
-    --             server_opts_overrides = {},
-    --         })
-    --     end,
-    -- },
-
     {
         'saghen/blink.cmp',
         -- In case there are breaking changes and you want to go back to the last
         -- working release
         -- https://github.com/Saghen/blink.cmp/releases
-        version = "*",
+        version = "v0.10.0",
+        build = "cargo build --release",
         dependencies = {
             "moyiz/blink-emoji.nvim",
             "Kaiser-Yang/blink-cmp-dictionary",
-            -- "giuxtaposition/blink-cmp-copilot"
+            "echasnovski/mini.icons",
+            "giuxtaposition/blink-cmp-copilot",
+            "rafamadriz/friendly-snippets",
+            {
+                "saghen/blink.compat",
+                optional = true, -- make optional so it's only enabled if any extras need it
+                opts = {},
+                version = "*",
+            },
         },
-
+        event = "InsertEnter",
+        opts_extend = {
+            "sources.completion.enabled_providers",
+            "sources.compat",
+            "sources.default",
+        },
+        optional = true,
         opts = {
-            keymap = { preset = 'default' }, -- fk it enter will only do new line, it's going to do one thing and doing good
+            keymap = {
+                preset = 'enter',
+                ["<C-y>"] = { "select_and_accept" },
+            },
             -- Use a preset for snippets, check the snippets documentation for more information
             completion = {
                 menu = {
@@ -138,10 +103,14 @@ return {
                         components = {
                             kind_icon = {
                                 ellipsis = false,
-                                text = function(ctx) return ctx.kind_icon .. ctx.icon_gap end,
+                                text = function(ctx)
+                                    local kind_icon, _, _ = require('mini.icons').get('lsp', ctx.kind)
+                                    return kind_icon
+                                end,
+                                -- Optionally, you may also use the highlights from mini.icons
                                 highlight = function(ctx)
-                                    return require('blink.cmp.completion.windows.render.tailwind').get_hl(ctx) or
-                                        'BlinkCmpKind' .. ctx.kind
+                                    local _, hl, _ = require('mini.icons').get('lsp', ctx.kind)
+                                    return hl
                                 end,
                             },
 
@@ -241,13 +210,13 @@ return {
 
                     selection = {
                         -- When `true`, will automatically select the first item in the completion list
-                        preselect = true,
+                        preselect = false,
                         -- preselect = function(ctx) return ctx.mode ~= 'cmdline' end,
 
                         -- When `true`, inserts the completion item automatically when selecting it
                         -- You may want to bind a key to the `cancel` command (default <C-e>) when using this option,
                         -- which will both undo the selection and hide the completion menu
-                        auto_insert = true,
+                        auto_insert = false,
                         -- auto_insert = function(ctx) return ctx.mode ~= 'cmdline' end
                     },
 
@@ -287,9 +256,9 @@ return {
                 },
                 documentation = {
                     -- Controls whether the documentation window will automatically show when selecting a completion item
-                    auto_show = false,
+                    auto_show = true,
                     -- Delay before showing the documentation window
-                    auto_show_delay_ms = 500,
+                    auto_show_delay_ms = 200,
                     -- Delay before updating the documentation window when selecting a new item,
                     -- while an existing item is still visible
                     update_delay_ms = 50,
@@ -313,17 +282,32 @@ return {
                         },
                     },
                 },
-                ghost_text = { enabled = false, },
+                ghost_text = {
+                    enabled = false,
+                },
             },
             sources = {
-                default = { "lsp", "path", "snippets", "buffer", "dadbod", "emoji", "dictionary", "lazydev",
-                    -- "copilot"
+                -- adding any nvim-cmp sources here will enable them
+                -- with blink.compat
+                compat = {},
+                default = {
+                    "lsp",
+                    "dadbod",
+                    "snippets",
+                    "lazydev",
+                    "path",
+                    "buffer",
+                    "emoji",
+                    "dictionary",
+                    "avante_commands",
+                    "avante_mentions",
+                    "avante_files",
+                    "copilot",
                 },
                 providers = {
                     lazydev = {
                         name = "LazyDev",
                         module = "lazydev.integrations.blink",
-                        -- make lazydev completions top priority (see `:h blink.cmp`)
                         score_offset = 100,
                     },
                     lsp = {
@@ -346,15 +330,14 @@ return {
                         -- suggestions, I want those to show only if there are no LSP
                         -- suggestions
                         -- Disabling fallbacks as my snippets wouldn't show up
-                        score_offset = 90, -- the higher the number, the higher the priority
                     },
                     path = {
                         name = "Path",
                         module = "blink.cmp.sources.path",
-                        score_offset = 25,
                         -- When typing a path, I would get snippets and text in the
                         -- suggestions, I want those to show only if there are no path
                         -- suggestions
+                        fallbacks = { "snippets", "buffer" },
                         opts = {
                             trailing_slash = false,
                             label_trailing_slash = true,
@@ -385,14 +368,12 @@ return {
                     dadbod = {
                         name = "Dadbod",
                         module = "vim_dadbod_completion.blink",
-                        score_offset = 85, -- the higher the number, the higher the priority
                     },
                     -- https://github.com/moyiz/blink-emoji.nvim
                     -- how to trigger: type :
                     emoji = {
                         module = "blink-emoji",
                         name = "Emoji",
-                        score_offset = 15,        -- the higher the number, the higher the priority
                         opts = { insert = true }, -- Insert emoji (default) or complete its name
                     },
                     -- https://github.com/Kaiser-Yang/blink-cmp-dictionary
@@ -401,7 +382,6 @@ return {
                     dictionary = {
                         module = "blink-cmp-dictionary",
                         name = "Dict",
-                        score_offset = 20, -- the higher the number, the higher the priority
                         enabled = true,
                         max_items = 8,
                         min_keyword_length = 3,
@@ -431,21 +411,40 @@ return {
                         },
                     },
                     -- ai completion lowest priority
-                    -- copilot = {
-                    --     name = "copilot",
-                    --     module = "blink-cmp-copilot",
-                    --     score_offset = 10,
-                    --     async = true,
-                    --     transform_items = function(_, items)
-                    --         local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
-                    --         local kind_idx = #CompletionItemKind + 1
-                    --         CompletionItemKind[kind_idx] = "Copilot"
-                    --         for _, item in ipairs(items) do
-                    --             item.kind = kind_idx
-                    --         end
-                    --         return items
-                    --     end,
-                    -- }
+                    copilot = {
+                        name = "copilot",
+                        module = "blink-cmp-copilot",
+                        score_offset = -100,
+                        async = true,
+                        opts = {
+                            max_completions = 3,
+                        },
+                        transform_items = function(_, items)
+                            local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
+                            local kind_idx = #CompletionItemKind + 1
+                            CompletionItemKind[kind_idx] = "Copilot"
+                            for _, item in ipairs(items) do
+                                item.kind = kind_idx
+                            end
+                            return items
+                        end,
+                    },
+                    -- cursor like ai
+                    avante_commands = {
+                        name = "avante_commands",
+                        module = "blink.compat.source",
+                        opts = {},
+                    },
+                    avante_files = {
+                        name = "avante_commands",
+                        module = "blink.compat.source",
+                        opts = {},
+                    },
+                    avante_mentions = {
+                        name = "avante_mentions",
+                        module = "blink.compat.source",
+                        opts = {},
+                    }
                 },
                 cmdline = function()
                     local type = vim.fn.getcmdtype()
@@ -460,21 +459,21 @@ return {
 
                 -- Function to use when transforming the items before they're returned for all providers
                 -- The default will lower the score for snippets to sort them lower in the list
-                transform_items = function(_, items) return items end,
+                -- transform_items = function(_, items) return items end,
 
                 -- Minimum number of characters in the keyword to trigger all providers
                 -- May also be `function(ctx: blink.cmp.Context): number`
                 min_keyword_length = 0,
             },
             appearance = {
-                highlight_ns = vim.api.nvim_create_namespace('blink_cmp'),
+                -- highlight_ns = vim.api.nvim_create_namespace('blink_cmp'),
                 -- Sets the fallback highlight groups to nvim-cmp's highlight groups
                 -- Useful for when your theme doesn't support blink.cmp
                 -- Will be removed in a future release
-                use_nvim_cmp_as_default = false,
+                -- use_nvim_cmp_as_default = false,
                 -- Set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
                 -- Adjusts spacing to ensure icons are aligned
-                nerd_font_variant = 'mono',
+                -- nerd_font_variant = 'mono',
                 kind_icons = {
                     Text = '󰉿',
                     Method = '󰊕',
@@ -506,9 +505,57 @@ return {
                     Event = '󱐋',
                     Operator = '󰪚',
                     TypeParameter = '󰬛',
+
+                    Copilot = '',
                 },
             },
         },
+        config = function(_, opts)
+            local enabled = opts.sources.default
+            for _, source in ipairs(opts.sources.compat or {}) do
+                opts.sources.providers[source] = vim.tbl_deep_extend(
+                    "force",
+                    { name = source, module = "blink.compat.source" },
+                    opts.sources.providers[source] or {}
+                )
+                if type(enabled) == "table" and not vim.tbl_contains(enabled, source) then
+                    table.insert(enabled, source)
+                end
+            end
+
+            -- Unset custom prop to pass blink.cmp validation
+            opts.sources.compat = nil
+
+            -- check if we need to override symbol kinds
+            for _, provider in pairs(opts.sources.providers or {}) do
+                ---@cast provider blink.cmp.SourceProviderConfig|{kind?:string}
+                if provider.kind then
+                    local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
+                    local kind_idx = #CompletionItemKind + 1
+
+                    CompletionItemKind[kind_idx] = provider.kind
+                    ---@diagnostic disable-next-line: no-unknown
+                    CompletionItemKind[provider.kind] = kind_idx
+
+                    ---@type fun(ctx: blink.cmp.Context, items: blink.cmp.CompletionItem[]): blink.cmp.CompletionItem[]
+                    local transform_items = provider.transform_items
+                    ---@param ctx blink.cmp.Context
+                    ---@param items blink.cmp.CompletionItem[]
+                    provider.transform_items = function(ctx, items)
+                        items = transform_items and transform_items(ctx, items) or items
+                        for _, item in ipairs(items) do
+                            item.kind = kind_idx or item.kind
+                        end
+                        return items
+                    end
+
+                    -- Unset custom prop to pass blink.cmp validation
+                    provider.kind = nil
+                end
+            end
+
+            require("blink.cmp").setup(opts)
+        end,
     },
 
     {
@@ -825,8 +872,9 @@ return {
             for server, config in pairs(opts.servers) do
                 -- passing config.capabilities to blink.cmp merges with the capabilities in your
                 -- `opts[server].capabilities, if you've defined it
-                config.capabilities = require('blink.cmp').get_lsp_capabilities(config.capabilities)
-                lspconfig[server].setup(config)
+                lspconfig[server].setup({
+                    capabilities = require("blink.cmp").get_lsp_capabilities()
+                })
             end
 
             -- set up mason dap
@@ -843,26 +891,6 @@ return {
             vim.keymap.set("n", "<leader>cm", "<cmd>Mason<cr>", { desc = "mason" })
         end,
     },
-
-    -- copilot plugin, make sure copilot.lua is loaded after completion plugin (blink)
-    -- {
-    --     "zbirenbaum/copilot.lua",
-    --     dependencies = { 'saghen/blink.cmp' },
-    --     build = ":Copilot auth",
-    --     opts = {
-    --         suggestion = {
-    --             enabled = false, -- disable virtual text suggestions
-    --             auto_trigger = true,
-    --             keymap = {
-    --                 accept = false, -- handled by nvim-cmp / blink.cmp
-    --                 next = "<C-n>",
-    --                 prev = "<C-p>",
-    --             },
-    --         },
-    --         panel = { enabled = false },
-    --         filetypes = nil,
-    --     },
-    -- },
 
     -- autopair
     {
