@@ -1,7 +1,4 @@
 local clangd_ext_opts = {
-    inlay_hints = {
-        inline = false,
-    },
     ast = {
         --These require codicons (https://github.com/microsoft/vscode-codicons)
         role_icons = {
