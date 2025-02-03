@@ -34,7 +34,45 @@ return {
             "Kaiser-Yang/blink-cmp-dictionary",
             "echasnovski/mini.icons",
             "giuxtaposition/blink-cmp-copilot",
-            "rafamadriz/friendly-snippets",
+            {
+                "echasnovski/mini.snippets",
+                event = "InsertEnter", -- don't depend on other plugins to load...
+                dependencies = "rafamadriz/friendly-snippets",
+
+                opts = function(_, opts)
+                    -- By default, for opts.snippets, the extra for mini.snippets only adds gen_loader.from_lang()
+                    -- This provides a sensible quickstart, integrating with friendly-snippets
+                    -- and your own language-specific snippets
+                    --
+                    -- In order to change opts.snippets, replace the entire table inside your own opts
+                    local expand_select_override = function(snippets, insert)
+                        -- Schedule, otherwise blink's virtual text is not removed on vim.ui.select
+                        require("blink.cmp").cancel()
+                        vim.schedule(function()
+                            MiniSnippets.default_select(snippets, insert)
+                        end)
+                    end
+
+                    local snippets, config_path = require("mini.snippets"), vim.fn.stdpath("config")
+
+                    opts.snippets = { -- override opts.snippets provided by extra...
+                        -- Load custom file with global snippets first (order matters)
+                        snippets.gen_loader.from_file(config_path .. "/snippets/global.json"),
+
+                        -- Load snippets based on current language by reading files from
+                        -- "snippets/" subdirectories from 'runtimepath' directories.
+                        snippets.gen_loader.from_lang(), -- this is the default in the extra...
+                    }
+                    opts.expand = {
+                        snippets = { snippets.gen_loader.from_lang() },
+                        select = function(local_snippets, insert)
+                            local select = expand_select_override or MiniSnippets.default_select
+                            select(local_snippets, insert)
+                        end,
+                    }
+                end,
+            },
+            { "garymjr/nvim-snippets" }, -- vscode style snippets, has builtin friendly-snippets
             {
                 "saghen/blink.compat",
                 optional = true, -- make optional so it's only enabled if any extras need it
@@ -283,6 +321,9 @@ return {
                     enabled = false,
                 },
             },
+            snippets = {
+                preset = 'mini_snippets'
+            },
             sources = {
                 -- adding any nvim-cmp sources here will enable them
                 -- with blink.compat
@@ -343,10 +384,6 @@ return {
                             end,
                             show_hidden_files_by_default = true,
                         },
-                    },
-                    snippets = {
-                        name = "snippets",
-                        module = "blink.cmp.sources.snippets",
                     },
                     buffer = {
                         name = "Buffer",
@@ -907,6 +944,28 @@ return {
         opts = {
             signs = false
         }
+    },
+
+    -- ts comments
+    {
+        "echasnovski/mini.comment",
+        event = "VeryLazy",
+        opts = {
+            options = {
+                custom_commentstring = function()
+                    return require("ts_context_commentstring.internal").calculate_commentstring() or vim.bo
+                        .commentstring
+                end,
+            },
+        },
+    },
+
+    {
+        "JoosepAlviste/nvim-ts-context-commentstring",
+        lazy = true,
+        opts = {
+            enable_autocmd = false,
+        },
     },
 
     -- variable rename
