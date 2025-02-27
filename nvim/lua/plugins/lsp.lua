@@ -757,12 +757,25 @@ return {
                     }
                 },
 
+                tailwindcss = {
+                    filetypes = {
+                        "html", "css", "javascript", "typescript",
+                        "vue", "svelte", "php", "htmldjango"
+                    },
+                    settings = {
+                        tailwindcss = {
+                            includeLanguages = {
+                                elixir = "html-eex",
+                                eelixir = "html-eex",
+                                heex = "html-eex",
+                            },
+                        },
+                    }
+                }
             },
 
             -- some particular setup steps
             setup = {
-
-
 
                 -- clangd_extensions
                 clangd = function(_, opts)
@@ -771,7 +784,19 @@ return {
                     return false
                 end,
 
-
+                -- tailwindcss fucking my cpu when editing markdown
+                tailwindcss = function(_, opts)
+                    opts.on_attach = function(client, bufnr)
+                        local filetype = vim.bo[bufnr].filetype
+                        if filetype == "markdown" or filetype == "mdx" then
+                            client.stop()
+                            return
+                        end
+                    end
+                    opts.filetypes = vim.tbl_filter(function(ft)
+                        return ft ~= "markdown" and ft ~= "mdx"
+                    end, opts.filetypes or {})
+                end,
             },
 
             -- corresponding dap installations
@@ -869,33 +894,24 @@ return {
             opts.servers = opts.servers or {}
             opts.dap = opts.dap or {}
 
-
             require('mason').setup()
-            require('mason-lspconfig').setup({
-                ensure_installed = vim.tbl_keys(opts.servers), -- Automatically install specified servers
-                automatic_installation = true,                 -- Automatically install servers set up via lspconfig
-                handlers = {
-                    function(server_name)
-                        if opts.servers[server_name] then
-                            -- Ensure config is a table, not a function call
-                            require('lspconfig')[server_name].setup(opts.servers[server_name])
-                        else
-                            require('lspconfig')[server_name].setup({})
-                        end
-                    end
-                }
+
+            require("mason-lspconfig").setup({
+                ensure_installed = vim.tbl_keys(opts.servers),
+                automatic_installation = true,
             })
 
-            -- automatically setup LSP servers
-            local lspconfig = require('lspconfig')
-            for server, config in pairs(opts.servers) do
-                -- passing config.capabilities to blink.cmp merges with the capabilities in your
-                -- `opts[server].capabilities, if you've defined it
-                lspconfig[server].setup({
-                    capabilities = require("blink.cmp").get_lsp_capabilities(),
-                    settings = config,
-                })
-            end
+            require('mason-lspconfig').setup_handlers({
+                function(server_name)
+                    local server_opts = opts.servers[server_name] or {}
+                    require("lspconfig")[server_name].setup(server_opts)
+
+                    -- if a custom setup function exists, call it
+                    if opts.setup and opts.setup[server_name] then
+                        opts.setup[server_name](server_name, server_opts)
+                    end
+                end,
+            })
 
             -- set up mason dap
             require('mason-nvim-dap').setup({
