@@ -46,6 +46,8 @@ local treesitter_opts = {
         "vimdoc",
         "xml",
         "yaml",
+        "rust",
+        "ron"
     },
     incremental_selection = {
         enable = true,
