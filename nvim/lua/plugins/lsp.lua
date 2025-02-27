@@ -27,11 +27,14 @@ return {
         -- In case there are breaking changes and you want to go back to the last
         -- working release
         -- https://github.com/Saghen/blink.cmp/releases
-        version = "v0.10.0",
+        -- version = "v0.10.0",
+        version = "v0.12.4", -- test v0.11.0, if anything get fucked, back to v10
         build = "cargo build --release",
         dependencies = {
+            "nvim-lua/plenary.nvim",
+            "ibhagwan/fzf-lua",
             "moyiz/blink-emoji.nvim",
-            "Kaiser-Yang/blink-cmp-dictionary",
+            -- 'Kaiser-Yang/blink-cmp-git',
             "echasnovski/mini.icons",
             "giuxtaposition/blink-cmp-copilot",
             {
@@ -155,7 +158,7 @@ return {
                                 text = function(ctx) return ctx.kind end,
                                 highlight = function(ctx)
                                     return require('blink.cmp.completion.windows.render.tailwind').get_hl(ctx) or
-                                        'BlinkCmpKind' .. ctx.kind
+                                        'PmenuKind' .. ctx.kind
                                 end,
                             },
 
@@ -336,11 +339,11 @@ return {
                     "path",
                     "buffer",
                     "emoji",
-                    "dictionary",
                     "avante_commands",
                     "avante_mentions",
                     "avante_files",
                     "copilot",
+                    -- "git",
                 },
                 providers = {
                     lazydev = {
@@ -410,40 +413,6 @@ return {
                         name = "Emoji",
                         opts = { insert = true }, -- Insert emoji (default) or complete its name
                     },
-                    -- https://github.com/Kaiser-Yang/blink-cmp-dictionary
-                    -- In macOS to get started with a dictionary:
-                    -- cp /usr/share/dict/words ~/github/dotfiles-latest/dictionaries
-                    dictionary = {
-                        module = "blink-cmp-dictionary",
-                        name = "Dict",
-                        enabled = true,
-                        max_items = 8,
-                        min_keyword_length = 3,
-                        opts = {
-                            get_command = {
-                                "rg", -- make sure this command is available in your system
-                                "--color=never",
-                                "--no-line-number",
-                                "--no-messages",
-                                "--no-filename",
-                                "--ignore-case",
-                                "--",
-                                "${prefix}",                            -- this will be replaced by the result of 'get_prefix' function
-                                vim.fn.expand("/usr/share/dict/words"), -- where you dictionary is
-                            },
-                            documentation = {
-                                enable = true, -- enable documentation to show the definition of the word
-                                get_command = {
-                                    -- For the word definitions feature
-                                    -- make sure "wn" is available in your system
-                                    -- brew install wordnet
-                                    "wn",
-                                    "${word}", -- this will be replaced by the word to search
-                                    "-over",
-                                },
-                            },
-                        },
-                    },
                     -- ai completion lowest priority
                     copilot = {
                         name = "copilot",
@@ -478,18 +447,15 @@ return {
                         name = "avante_mentions",
                         module = "blink.compat.source",
                         opts = {},
-                    }
+                    },
+                    -- git = {
+                    --     module = 'blink-cmp-git',
+                    --     name = 'Git',
+                    --     opts = {
+                    --         -- options for the blink-cmp-git
+                    --     },
+                    -- },
                 },
-                cmdline = function()
-                    local type = vim.fn.getcmdtype()
-                    if type == "/" or type == "?" then
-                        return { "buffer" }
-                    end
-                    if type == ":" or type == '@' then
-                        return { "cmdline" }
-                    end
-                    return {}
-                end,
 
                 -- Function to use when transforming the items before they're returned for all providers
                 -- The default will lower the score for snippets to sort them lower in the list
@@ -498,6 +464,30 @@ return {
                 -- Minimum number of characters in the keyword to trigger all providers
                 -- May also be `function(ctx: blink.cmp.Context): number`
                 min_keyword_length = 0,
+            },
+            cmdline = {
+                enabled = true,
+                keymap = nil, -- Inherits from top level `keymap` config when not set
+                sources = function()
+                    local type = vim.fn.getcmdtype()
+                    -- Search forward and backward
+                    if type == '/' or type == '?' then return { 'buffer' } end
+                    -- Commands
+                    if type == ':' or type == '@' then return { 'cmdline' } end
+                    return {}
+                end,
+                completion = {
+                    trigger = {
+                        show_on_blocked_trigger_characters = {},
+                        show_on_x_blocked_trigger_characters = nil, -- Inherits from top level `completion.trigger.show_on_blocked_trigger_characters` config when not set
+                    },
+                    menu = {
+                        auto_show = nil, -- Inherits from top level `completion.menu.auto_show` config when not set
+                        draw = {
+                            columns = { { 'label', 'label_description', gap = 1 } },
+                        },
+                    }
+                }
             },
             appearance = {
                 -- highlight_ns = vim.api.nvim_create_namespace('blink_cmp'),
@@ -601,7 +591,6 @@ return {
             { "mfussenegger/nvim-dap" },
             { "mfussenegger/nvim-dap-python" },
             { "leoluz/nvim-dap-go" },
-            { "saghen/blink.cmp" },
             {
                 'folke/lazydev.nvim',
                 ft = 'lua',
@@ -689,25 +678,6 @@ return {
                     },
                 },
 
-                -- tailwind
-                tailwindcss = {
-                    -- exclude a filetype from the default_config
-                    filetypes_exclude = { "markdown" },
-                    -- add additional filetypes to the default_config
-                    filetypes_include = {},
-                    -- to fully override the default_config, change the below
-                    filetypes = { "html", "css", "javascript", "typescript", "vue", "svelte", "php", "htmldjango" },
-                    settings = {
-                        tailwindCSS = {
-                            includeLanguages = {
-                                elixir = "html-eex",
-                                eelixir = "html-eex",
-                                heex = "html-eex",
-                            },
-                        }
-                    },
-                },
-
 
                 -- Go LSP settings
                 gopls = {
@@ -769,27 +739,30 @@ return {
                 --[[
                 --no need to setup rust-analyzer manually since installed `rustaceanvim`
                 --]]
+
+                -- zig 14 dev version zls setup
+                zls = {
+                    cmd = { "/Users/tengjungao/.zvm/bin/zls" },
+                    settings = {
+                        zls = {
+                            -- Whether to enable build-on-save diagnostics
+                            --
+                            -- Further information about build-on save:
+                            -- https://zigtools.org/zls/guides/build-on-save/
+                            -- enable_build_on_save = true,
+
+                            -- omit the following line if `zig` is in your PATH
+                            zig_exe_path = "/Users/tengjungao/.zvm/bin/zig"
+                        }
+                    }
+                },
+
             },
 
             -- some particular setup steps
             setup = {
 
-                -- tailwind
-                tailwindcss = function(_, opts)
-                    opts.filetypes = opts.filetypes or {}
 
-                    -- Remove excluded filetypes
-                    --- @param ft string
-                    opts.filetypes = vim.tbl_filter(function(ft)
-                        return not vim.tbl_contains(opts.filetypes_exclude or {}, ft)
-                    end, opts.filetypes)
-
-                    -- Additional settings for Phoenix projects
-                    opts.settings = opts.settings
-
-                    -- Add additional filetypes
-                    vim.list_extend(opts.filetypes, opts.filetypes_include or {})
-                end,
 
                 -- clangd_extensions
                 clangd = function(_, opts)
@@ -797,6 +770,8 @@ return {
                         { server = opts }))
                     return false
                 end,
+
+
             },
 
             -- corresponding dap installations
@@ -899,6 +874,16 @@ return {
             require('mason-lspconfig').setup({
                 ensure_installed = vim.tbl_keys(opts.servers), -- Automatically install specified servers
                 automatic_installation = true,                 -- Automatically install servers set up via lspconfig
+                handlers = {
+                    function(server_name)
+                        if opts.servers[server_name] then
+                            -- Ensure config is a table, not a function call
+                            require('lspconfig')[server_name].setup(opts.servers[server_name])
+                        else
+                            require('lspconfig')[server_name].setup({})
+                        end
+                    end
+                }
             })
 
             -- automatically setup LSP servers
@@ -907,7 +892,8 @@ return {
                 -- passing config.capabilities to blink.cmp merges with the capabilities in your
                 -- `opts[server].capabilities, if you've defined it
                 lspconfig[server].setup({
-                    capabilities = require("blink.cmp").get_lsp_capabilities()
+                    capabilities = require("blink.cmp").get_lsp_capabilities(),
+                    settings = config,
                 })
             end
 
@@ -1033,7 +1019,7 @@ return {
     -- rust
     {
         "mrcjkb/rustaceanvim",
-        version = "^5", -- recommended
+        -- version = "^5", -- recommended
         -- [[
         -- It is suggested to pin to tagged releases if you would like to avoid breaking changes.
         -- ]]
