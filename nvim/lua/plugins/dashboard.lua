@@ -202,7 +202,6 @@ local logo6 = [[
 ██║░╚███║███████╗╚█████╔╝░░╚██╔╝░░██║██║░╚═╝░██║  ██████╦╝░░░██║░░░░░╚██╔╝░╚██╔╝░
 ╚═╝░░╚══╝╚══════╝░╚════╝░░░░╚═╝░░░╚═╝╚═╝░░░░░╚═╝  ╚═════╝░░░░╚═╝░░░░░░╚═╝░░░╚═╝░░
 
-
 ⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀
 ⠀⠀⡠⠒⢁⠤⠒⠊⠉⠉⠉⡉⠉⠁⠒⠤⢀⠑⠢⡀⠀⠀
 ⠀⡔⢀⠴⠁⠀⡰⡇⠀⠀⢠⠻⡀⠀⠀⠀⠀⠑⢆⠈⢄⠀
@@ -301,9 +300,8 @@ return {
                     {
                         action = function()
                             require("fzf-lua").files({
-                                cwd = vim.fn.expand("~/.config/nvim/lua/"),
-                                prompt = "Find Config> ",
-                                previewer = "custom", -- universal_previewer
+                                prompt = "Find NVIM Config> ",
+                                cwd = vim.fn.expand("~/.config/nvim/lua/"), -- Set the root directory
                             })
                         end,
                         desc = " Config",

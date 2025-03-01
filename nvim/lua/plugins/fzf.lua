@@ -28,7 +28,7 @@ return {
                     -- fullscreen = false, -- ensure floating window
 
                     preview = {
-                        default = "bat",
+                        -- default = "bat",
                         -- hidden = false,     -- always show preview window
                         layout = "flex",    -- auto adjust layout based on space
                         flip_columns = 120, -- adjust layout when terminal width < 120 columns
@@ -44,7 +44,12 @@ return {
                             fn = function(filepath, bufnr, opts)
                                 local preview_cmd = universal_previewer(filepath)
                                 if preview_cmd then
-                                    require("fzf-lua.previewer").cmd_async(preview_cmd, bufnr, opts)
+                                    -- convert the command table into a string
+                                    local cmd_str = table.concat(preview_cmd, " ")
+                                    require("fzf-lua.previewer").cmd_sync(cmd_str, bufnr, opts)
+                                else
+                                    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false,
+                                        { "No preview available for this file type." })
                                 end
                             end,
                         },
@@ -64,19 +69,19 @@ return {
             -- Replace Telescope bindings with fzf-lua
             vim.keymap.set(
                 "n", "gd",
-                "<cmd>FzfLua lsp_definitions jump_to_single_result=true ignore_current_line=true<cr>",
+                "<cmd>FzfLua lsp_definitions jump1=true ignore_current_line=true<cr>",
                 { desc = "Go to definition" }
             )
             vim.keymap.set("n", "gr",
-                "<cmd>FzfLua lsp_references jump_to_single_result=true ignore_current_line=true<cr>",
+                "<cmd>FzfLua lsp_references jump1=true ignore_current_line=true<cr>",
                 { desc = "Go to references" })
 
             vim.keymap.set("n", "gI",
-                "<cmd>FzfLua lsp_implementations jump_to_single_result=true ignore_current_line=true<cr>",
+                "<cmd>FzfLua lsp_implementations jump1=true ignore_current_line=true<cr>",
                 { desc = "Go to implementation" })
 
             vim.keymap.set("n", "<leader>D",
-                "<cmd>FzfLua lsp_typedefs jump_to_single_result=true ignore_current_line=true<cr>",
+                "<cmd>FzfLua lsp_typedefs jump1=true ignore_current_line=true<cr>",
                 { desc = "Go to type definition" })
 
             vim.keymap.set("n", "<leader>fa", "<cmd>FzfLua lsp_document_symbols<cr>",
@@ -114,6 +119,7 @@ return {
                     cwd = vim.fn.expand("~/.config/nvim/lua/"), -- Set the root directory
                 })
             end, { desc = "Find files in Neovim config" })
+            vim.keymap.set("n", "<leader>fr", "<cmd>FzfLua oldfiles<cr>", { desc = "Search recent files" })
         end,
     }
 }

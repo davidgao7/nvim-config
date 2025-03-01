@@ -54,6 +54,9 @@ vim.opt.grepprg = "rg --vimgrep --smart-case"
 vim.o.ignorecase = true
 -- Override ignorecase if the search includes uppercase letters
 vim.o.smartcase = true
+-- ensures that suggestions are displayed, but none are preselected or auto-inserted,
+-- allowing you to manually select the desired completion
+vim.o.completeopt = 'menu,menuone,noinsert,noselect'
 
 -- sync with system clipboard
 -- vim.opt.clipboard = vim.env.SSH_TTY and "" or "unnamedplus" -- Sync with system clipboard

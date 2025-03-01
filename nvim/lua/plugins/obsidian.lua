@@ -13,10 +13,24 @@ return {
             "ObsidianToday",
             "ObsidianTomorrow",
             "ObsidianYesterday",
+            "ObsidianFollowLink",
+            "ObsidianBacklinks",
+            "ObsidianTags",
+            "ObsidianDailies",
+            "ObsidianLink",
+            "ObsidianLinkNew",
+            "ObsidianLinks",
+            "ObsidianExtractNote",
+            "ObsidianWorkspace",
+            "ObsidianPasteImg",
+            "ObsidianRename",
+            "ObsidianToggleCheckbox",
+            "ObsidianNewFromTemplate",
+            "ObsidianTOC"
         },
         event = {
-            "BufReadPre /Users/tengjungao/Documents/Obsidian_Vault/*.md",
-            "BufNewFile /Users/tengjungao/Documents/Obsidian_Vault/*.md",
+            "BufReadPre /Users/tengjungao/Obsidian_Vault/*.md",
+            "BufNewFile /Users/tengjungao/Obsidian_Vault/*.md",
         },
         ft = "markdown",
         dependencies = {
@@ -31,10 +45,29 @@ return {
             workspaces = {
                 {
                     name = "notes",
-                    path = "~/Documents/Obsidian_Vault",
+                    path = "/Users/tengjungao/Obsidian_Vault",
                 },
                 -- Add more workspaces if needed
             },
+            -- Optional, boolean or a function that takes a filename and returns a boolean.
+            -- `true` indicates that you don't want obsidian.nvim to manage frontmatter.
+            disable_frontmatter = false,
+            note_frontmatter_func = function(note)
+                local hugo_dir = "/Users/tengjungao/Obsidian_Vault/davidgao7blogs"
+                local current_file = vim.fn.expand("%:p")
+                if current_file:sub(1, #hugo_dir) == hugo_dir then
+                    -- If the file is in the Hugo directory, return an empty table to disable front matter
+                    return {}
+                else
+                    -- Default front matter for other files
+                    return {
+                        id = note.id,
+                        aliases = note.aliases,
+                        tags = note.tags,
+                        -- Add other default front matter fields as needed
+                    }
+                end
+            end,
             -- Set the log level for obsidian.nvim
             log_level = vim.log.levels.INFO,
             -- Configuration for daily notes
@@ -102,9 +135,6 @@ return {
                 time_format = "%H:%M",
                 substitutions = {},
             },
-            -- Optional, boolean or a function that takes a filename and returns a boolean.
-            -- `true` indicates that you don't want obsidian.nvim to manage frontmatter.
-            disable_frontmatter = false,
         },
         -- work around to fix cmp error
         config = function(_, opts)

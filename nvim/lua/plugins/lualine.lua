@@ -1,3 +1,18 @@
+-- Custom Copilot Status Component
+local function copilot_status()
+    local ok, clients = pcall(vim.lsp.get_active_clients)
+    if not ok or not clients then
+        return ""
+    end
+    for _, client in ipairs(clients) do
+        if client.name == "copilot" then
+            return ""
+        end
+    end
+    return ""
+end
+
+
 return {
     {
         'nvim-lualine/lualine.nvim',
@@ -87,7 +102,7 @@ return {
                 function()
                     return '▊'
                 end,
-                color = { fg = colors.blue }, -- Sets highlighting of component
+                color = { fg = colors.blue },      -- Sets highlighting of component
                 padding = { left = 0, right = 1 }, -- We don't need space before this
             }
 
@@ -131,10 +146,22 @@ return {
                 cond = conditions.buffer_not_empty,
             }
 
+            -- ins_left {
+            --     'filename',
+            --     cond = conditions.buffer_not_empty,
+            --     color = { fg = colors.magenta, gui = 'bold' },
+            -- }
+
             ins_left {
-                'filename',
-                cond = conditions.buffer_not_empty,
-                color = { fg = colors.magenta, gui = 'bold' },
+                'diff',
+                -- Is it me or the symbol for modified us really weird
+                symbols = { added = ' ', modified = '󰝤 ', removed = ' ' },
+                diff_color = {
+                    added = { fg = colors.green },
+                    modified = { fg = colors.orange },
+                    removed = { fg = colors.red },
+                },
+                cond = conditions.hide_in_width,
             }
 
             ins_left { 'location' }
@@ -150,6 +177,10 @@ return {
                     warn = { fg = colors.yellow },
                     info = { fg = colors.cyan },
                 },
+            }
+
+            ins_left {
+                copilot_status, -- Add Copilot status function here
             }
 
             -- Insert mid section. You can make any number of sections in neovim :)
@@ -182,8 +213,9 @@ return {
             }
 
             -- Add components to right sections
+
             ins_right {
-                'o:encoding', -- option component same as &encoding in viml
+                'o:encoding',       -- option component same as &encoding in viml
                 fmt = string.upper, -- I'm not sure why it's upper case either ;)
                 cond = conditions.hide_in_width,
                 color = { fg = colors.green, gui = 'bold' },
@@ -226,5 +258,5 @@ return {
             lualine.setup(config)
         end
 
-    }
+    },
 }

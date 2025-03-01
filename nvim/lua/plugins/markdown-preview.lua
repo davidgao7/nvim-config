@@ -17,5 +17,6 @@ return {
         config = function()
             vim.cmd([[do FileType]])
         end,
-    }
+    },
+
 }
