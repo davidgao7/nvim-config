@@ -110,15 +110,21 @@ return {
             },
             -- Function to generate note IDs
             note_id_func = function(title)
+                -- local suffix = ""
+                -- if title ~= nil then
+                --     suffix = title:gsub(" ", "-"):gsub("[^A-Za-z0-9-]", ""):lower()
+                -- else
+                --     for _ = 1, 4 do
+                --         suffix = suffix .. string.char(math.random(65, 90))
+                --     end
+                -- end
+                -- return tostring(os.time()) .. "-" .. suffix
+                local uuid = vim.fn.system("uuidgen"):gsub("%-%s", ""):lower():gsub("%\n", "")
                 local suffix = ""
                 if title ~= nil then
                     suffix = title:gsub(" ", "-"):gsub("[^A-Za-z0-9-]", ""):lower()
-                else
-                    for _ = 1, 4 do
-                        suffix = suffix .. string.char(math.random(65, 90))
-                    end
                 end
-                return tostring(os.time()) .. "-" .. suffix
+                return uuid .. "-" .. suffix
             end,
             -- Optional, by default when you use `:ObsidianFollowLink` on a link to an external
             -- URL it will be ignored but you can customize this behavior here.
