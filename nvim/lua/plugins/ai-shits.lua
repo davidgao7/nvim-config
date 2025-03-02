@@ -90,30 +90,25 @@ return {
                 end
             end
 
-            -- Key mappings for CopilotChat commands
-            vim.keymap.set('n', '<leader>ci', '', { desc = 'copilot+' })
-            vim.keymap.set('n', '<leader>cie', '<cmd>CopilotChatExplain<CR>', { desc = 'CopilotChat - Explain code' })
-            vim.keymap.set('n', '<leader>cit', '<cmd>CopilotChatTests<CR>', { desc = 'CopilotChat - Generate tests' })
-            vim.keymap.set('n', '<leader>cir', '<cmd>CopilotChatReview<CR>', { desc = 'CopilotChat - Review code' })
-            vim.keymap.set('n', '<leader>ciR', '<cmd>CopilotChatRefactor<CR>', { desc = 'CopilotChat - Refactor code' })
-            vim.keymap.set('n', '<leader>cin', '<cmd>CopilotChatBetterNamings<CR>',
-                { desc = 'CopilotChat - Better Naming' })
-            vim.keymap.set('n', '<leader>cix', '<cmd>CopilotChatInline<CR>', { desc = 'CopilotChat - Inline chat' })
-            vim.keymap.set('n', '<leader>cii', function() copilot_chat_input('Ask Copilot: ', 'CopilotChat') end,
-                { desc = 'CopilotChat - Ask input' })
-            vim.keymap.set('n', '<leader>cim', '<cmd>CopilotChatCommit<CR>',
-                { desc = 'Generate commit message for all changes' })
-            vim.keymap.set('n', '<leader>ciM', '<cmd>CopilotChatCommitStaged<CR>',
-                { desc = 'Generate commit message for staged changes' })
-            vim.keymap.set('n', '<leader>ciq', function() copilot_chat_input('Quick Chat: ', 'CopilotChatBuffer') end,
-                { desc = 'CopilotChat - Quick chat' })
-            vim.keymap.set('n', '<leader>cid', '<cmd>CopilotChatDebugInfo<CR>', { desc = 'CopilotChat - Debug Info' })
-            vim.keymap.set('n', '<leader>cif', '<cmd>CopilotChatFixDiagnostic<CR>',
-                { desc = 'CopilotChat - Fix Diagnostic' })
-            vim.keymap.set('n', '<leader>cil', '<cmd>CopilotChatReset<CR>',
-                { desc = 'CopilotChat - Clear buffer and chat history' })
-            vim.keymap.set('n', '<leader>civ', '<cmd>CopilotChatToggle<CR>', { desc = 'CopilotChat - Toggle Vsplit' })
+            vim.keymap.set("n", "<leader>cii", function() copilot_chat_input("Ask Copilot: ", "CopilotChat") end,
+                { desc = "CopilotChat - Ask input" })
+            vim.keymap.set("n", "<leader>ciq", function() copilot_chat_input("Quick Chat: ", "CopilotChatBuffer") end,
+                { desc = "CopilotChat - Quick chat" })
         end,
+        keys = {
+            { "<leader>ci",  "",                                  mode = "n", desc = "copilot+" },
+            { "<leader>cie", "<cmd>CopilotChatExplain<CR>",       mode = "n", desc = "CopilotChat - Explain code" },
+            { "<leader>cit", "<cmd>CopilotChatTests<CR>",         mode = "n", desc = "CopilotChat - Generate tests" },
+            { "<leader>cir", "<cmd>CopilotChatReview<CR>",        mode = "n", desc = "CopilotChat - Review code" },
+            { "<leader>ciR", "<cmd>CopilotChatRefactor<CR>",      mode = "n", desc = "CopilotChat - Refactor code" },
+            { "<leader>cix", "<cmd>CopilotChatInline<CR>",        mode = "n", desc = "CopilotChat - Inline chat" },
+            { "<leader>cim", "<cmd>CopilotChatCommit<CR>",        mode = "n", desc = "Generate commit message for all changes" },
+            { "<leader>ciM", "<cmd>CopilotChatCommitStaged<CR>",  mode = "n", desc = "Generate commit message for staged changes" },
+            { "<leader>cid", "<cmd>CopilotChatDebugInfo<CR>",     mode = "n", desc = "CopilotChat - Debug Info" },
+            { "<leader>cif", "<cmd>CopilotChatFixDiagnostic<CR>", mode = "n", desc = "CopilotChat - Fix Diagnostic" },
+            { "<leader>cil", "<cmd>CopilotChatReset<CR>",         mode = "n", desc = "CopilotChat - Clear buffer and chat history" },
+            { "<leader>civ", "<cmd>CopilotChatToggle<CR>",        mode = "n", desc = "CopilotChat - Toggle Vsplit" },
+        }
     },
 
     -- "cursor": avante.nvim
