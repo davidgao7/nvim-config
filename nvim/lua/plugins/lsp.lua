@@ -617,6 +617,9 @@ return {
                                 callSnippet = 'Disable',
                                 keywordSnippet = 'Disable',
                             },
+                            hint = {
+                                enable = true -- inlay hints
+                            }
                         },
                     },
                 },
@@ -635,12 +638,29 @@ return {
                                     reportMissingTypeStubs = "none",    -- Suppress missing type stub errors
                                 },
                             },
+                            inlayHints = {
+                                functionReturnTypes = true,
+                                variableTypes = true,
+                                parameterTypes = true,
+                                parameternames = true,
+                            },
                         }
                     }
                 },
 
                 -- cpp/c lsp
                 clangd = {
+                    settings = {
+                        clangd = {
+                            inlayHints = {
+                                Designators = true,
+                                Enabled = true,
+                                ParameterNames = true,
+                                DecucedTypes = true,
+                            },
+                            fallbackFlags = { "-std=c++20" }, -- or your preferred C++ standard
+                        }
+                    },
                     keys = {
                         { "<leader>ch", "<cmd>ClangdSwitchSourceHeader<cr>", desc = "Switch Source/Header (C/C++)" },
                     },
@@ -692,7 +712,11 @@ return {
                             hints = {
                                 assignVariableTypes = true,    -- Show variable type hints
                                 compositeLiteralFields = true, -- Show field names in composite literals
+                                compositeLiteralTypes = true,
                                 constantValues = true,         -- Show values of constants
+                                functionTypeParameters = true, -- Show type parameters for functions
+                                parameterNames = true,
+                                rangeVariableTypes = true,     -- Show types of range variables
                             },
                             analyses = {
                                 fieldalignment = true,                       -- Check for optimal struct field alignment
@@ -711,6 +735,7 @@ return {
                 },
 
                 -- java lsp settings
+                -- inlay hints are generally enabled by default
                 jdtls = {
                     root_dir = function(fname)
                         return require("lspconfig.util").root_pattern("build.gradle", "pom.xml", ".git")(fname)
@@ -1061,6 +1086,29 @@ return {
             --     { silent = true, buffer = bufnr }
             -- )
         end
+    },
+
+    -- inlay hints
+    {
+        "folke/snacks.nvim",
+        opts = {
+            inlay_hints = {
+                enabled = true,                   -- Enable inlay hints globally
+                debounce = 200,                   -- Debounce updates for performance
+                display = {
+                    highlight = "Comment",        -- Color customization
+                    virtual_text = true,          -- Show as virtual text
+                    priority = 100,               -- Set hint priority
+                },
+                exclude = { "markdown", "text" }, -- Exclude unwanted filetypes
+            }
+        },
+        config = function(_, opts)
+            require("snacks").setup(opts)
+            vim.keymap.set("n", "<leader>si", function()
+                vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+            end, { desc = "Toggle Inlay Hints" })
+        end,
     },
 
 }
