@@ -734,6 +734,17 @@ return {
                     },
                 },
 
+                golangci_lint_ls = {
+                    cmd = { 'golangci-lint-langserver' },
+                    filetypes = { 'go', 'gomod' },
+                    root_dir = function(fname)
+                        return require("lspconfig.util").root_pattern("go.mod", ".git")(fname)
+                    end,
+                    init_options = {
+                        command = { 'golangci-lint', 'run', '--out-format', 'json' },
+                    },
+                },
+
                 -- java lsp settings
                 -- inlay hints are generally enabled by default
                 jdtls = {
@@ -822,6 +833,7 @@ return {
                         return ft ~= "markdown" and ft ~= "mdx"
                     end, opts.filetypes or {})
                 end,
+
             },
 
             -- corresponding dap installations
