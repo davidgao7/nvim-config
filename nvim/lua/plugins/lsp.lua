@@ -143,9 +143,13 @@ return {
                                 ellipsis = false,
                                 text = function(ctx)
                                     local kind_icon, _, _ = require('mini.icons').get('lsp', ctx.kind)
+
+                                    -- If mini.icons fails, manually return Copilot icon
+                                    if ctx.kind == "Copilot" then
+                                        return ""
+                                    end
                                     return kind_icon
                                 end,
-                                -- Optionally, you may also use the highlights from mini.icons
                                 highlight = function(ctx)
                                     local _, hl, _ = require('mini.icons').get('lsp', ctx.kind)
                                     return hl
@@ -424,11 +428,19 @@ return {
                         },
                         transform_items = function(_, items)
                             local CompletionItemKind = require("blink.cmp.types").CompletionItemKind
-                            local kind_idx = #CompletionItemKind + 1
-                            CompletionItemKind[kind_idx] = "Copilot"
-                            for _, item in ipairs(items) do
-                                item.kind = kind_idx
+                            local kind_idx = CompletionItemKind.Copilot or (#CompletionItemKind + 1)
+
+                            -- If not assigned, manually set it
+                            if not CompletionItemKind.Copilot then
+                                CompletionItemKind[kind_idx] = "Copilot"
+                                CompletionItemKind["Copilot"] = kind_idx
                             end
+
+                            for _, item in ipairs(items) do
+                                item.kind = kind_idx -- Assign the Copilot kind ID
+                                item.kind_icon = "" -- Explicitly set the Copilot icon
+                            end
+
                             return items
                         end,
                     },
@@ -578,6 +590,7 @@ return {
                 end
             end
 
+            -- print(vim.inspect(opts))
             require("blink.cmp").setup(opts)
         end,
     },
