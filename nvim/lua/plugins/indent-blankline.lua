@@ -21,6 +21,10 @@ return {
     {
         "lukas-reineke/indent-blankline.nvim",
         opts = function()
+            -- Define custom highlight groups for scope
+            vim.api.nvim_set_hl(0, "IndentBlanklineScopeStart", { fg = "#483D8B", bold = true }) -- Change color
+            vim.api.nvim_set_hl(0, "IndentBlanklineScopeEnd", { fg = "#483D8B", bold = true })   -- Change color
+
             Snacks = require("snacks")
             Snacks.toggle({
                 name = "Indention Guides",
@@ -37,7 +41,14 @@ return {
                     char = "│",
                     tab_char = "│",
                 },
-                scope = { show_start = false, show_end = false },
+                scope = {
+                    show_start = true,
+                    show_end = true,
+                    highlight = {
+                        "IndentBlanklineScopeStart",
+                        "IndentBlanklineScopeEnd"
+                    }
+                },
                 exclude = {
                     filetypes = {
                         "Trouble",
