@@ -39,38 +39,52 @@ return {
             "giuxtaposition/blink-cmp-copilot",
             {
                 "echasnovski/mini.snippets",
-                event = "InsertEnter", -- don't depend on other plugins to load...
-                dependencies = "rafamadriz/friendly-snippets",
-
+                event = "InsertEnter",
+                dependencies = {
+                    "rafamadriz/friendly-snippets",
+                    { "echasnovski/mini.extra", version = "*" },
+                },
                 opts = function(_, opts)
-                    -- By default, for opts.snippets, the extra for mini.snippets only adds gen_loader.from_lang()
-                    -- This provides a sensible quickstart, integrating with friendly-snippets
-                    -- and your own language-specific snippets
-                    --
-                    -- In order to change opts.snippets, replace the entire table inside your own opts
-                    local expand_select_override = function(snippets, insert)
-                        -- Schedule, otherwise blink's virtual text is not removed on vim.ui.select
+                    local snippets = require("mini.snippets")
+                    local config_path = vim.fn.stdpath("config")
+                    local custom_snip_dir = config_path .. "/snippets"
+
+                    -- Optional: override select popup to prevent virtual text artifacts
+                    local expand_select_override = function(snips, insert)
                         require("blink.cmp").cancel()
                         vim.schedule(function()
-                            MiniSnippets.default_select(snippets, insert)
+                            snippets.default_select(snips, insert)
                         end)
                     end
 
-                    local snippets, config_path = require("mini.snippets"), vim.fn.stdpath("config")
+                    local snippet_sources = {}
 
-                    opts.snippets = { -- override opts.snippets provided by extra...
-                        -- Load custom file with global snippets first (order matters)
-                        snippets.gen_loader.from_file(config_path .. "/snippets/global.json"),
+                    -- Load global.json first (shared across languages)
+                    local global_path = custom_snip_dir .. "/global.json"
+                    if vim.fn.filereadable(global_path) == 1 then
+                        table.insert(snippet_sources, snippets.gen_loader.from_file(global_path))
+                    end
 
-                        -- Load snippets based on current language by reading files from
-                        -- "snippets/" subdirectories from 'runtimepath' directories.
-                        snippets.gen_loader.from_lang(), -- this is the default in the extra...
-                    }
+                    -- Automatically load language-specific snippets like `python.json`
+                    for _, file in ipairs(vim.fn.readdir(custom_snip_dir)) do
+                        if file:match("%.json$") and file ~= "global.json" then
+                            table.insert(snippet_sources, snippets.gen_loader.from_file(custom_snip_dir .. "/" .. file))
+                        end
+                    end
+
+                    -- Add built-in mini.extra snippets
+                    local ok, extra = pcall(require, "mini.extra")
+                    if ok and extra.gen_snippets then
+                        table.insert(snippet_sources, extra.gen_snippets(extra.default_snippets))
+                    end
+
+                    -- Final opts
+                    opts.snippets = snippet_sources
                     opts.expand = {
                         snippets = { snippets.gen_loader.from_lang() },
-                        select = function(local_snippets, insert)
-                            local select = expand_select_override or MiniSnippets.default_select
-                            select(local_snippets, insert)
+                        select = function(local_snips, insert)
+                            local select = expand_select_override or snippets.default_select
+                            select(local_snips, insert)
                         end,
                     }
                 end,
@@ -327,9 +341,6 @@ return {
                 ghost_text = {
                     enabled = false,
                 },
-            },
-            snippets = {
-                preset = 'mini_snippets'
             },
             sources = {
                 -- adding any nvim-cmp sources here will enable them
@@ -820,7 +831,61 @@ return {
                             },
                         },
                     }
-                }
+                },
+
+                harper_ls = {
+                    -- Limit `harper_ls` to work only on comments and markdown files
+                    filetypes = { "markdown", "text" }, -- It will only run for these filetypes
+                    settings = {
+                        ["harper-ls"] = {
+                            userDictPath = "",
+                            fileDictPath = "",
+                            linters = {
+                                SpellCheck = true,
+                                SpelledNumbers = false,
+                                AnA = true,
+                                SentenceCapitalization = true,
+                                UnclosedQuotes = true,
+                                WrongQuotes = false,
+                                LongSentences = true,
+                                RepeatedWords = true,
+                                Spaces = true,
+                                Matcher = true,
+                                CorrectNumberSuffix = true
+                            },
+                            codeActions = {
+                                ForceStable = false
+                            },
+                            markdown = {
+                                IgnoreLinkTitle = false
+                            },
+                            diagnosticSeverity = "hint",
+                            isolateEnglish = false
+                        }
+                    },
+                    handlers = {
+                        ["textDocument/publishDiagnostics"] = function(_, result, ctx, config)
+                            local uri = result.uri
+                            local bufnr = vim.uri_to_bufnr(uri)
+                            if not bufnr then return end
+
+                            -- Get all diagnostics and filter only those inside comments
+                            local new_diagnostics = {}
+                            for _, diagnostic in ipairs(result.diagnostics) do
+                                local line = vim.api.nvim_buf_get_lines(bufnr, diagnostic.range.start.line,
+                                    diagnostic.range.start.line + 1, false)[1]
+                                if line and line:match("^%s*[%/%*#]") then -- Matches comment patterns like `//`, `#`, or `/*`
+                                    table.insert(new_diagnostics, diagnostic)
+                                end
+                            end
+
+                            -- Call the original diagnostics handler but only for filtered diagnostics
+                            vim.lsp.diagnostic.on_publish_diagnostics(_, { uri = uri, diagnostics = new_diagnostics },
+                                ctx, config)
+                        end
+                    },
+                },
+
             },
 
             -- some particular setup steps

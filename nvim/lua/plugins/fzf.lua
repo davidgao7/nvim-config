@@ -116,7 +116,7 @@ return {
             vim.keymap.set("n", "<leader>fc", function()
                 require("fzf-lua").files({
                     prompt = "Find NVIM Config> ",
-                    cwd = vim.fn.expand("~/.config/nvim/lua/"), -- Set the root directory
+                    cwd = vim.fn.expand("~/.config/nvim/"), -- Set the root directory
                 })
             end, { desc = "Find files in Neovim config" })
             vim.keymap.set("n", "<leader>fr", "<cmd>FzfLua oldfiles<cr>", { desc = "Search recent files" })

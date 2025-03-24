@@ -1,0 +1,10 @@
+{
+    "Date": {
+        "prefix": "date",
+        "body": "${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}"
+    },
+    "Signature": {
+        "prefix": "sig",
+        "body": "Best regards,\nYour Name"
+    }
+}
