@@ -115,8 +115,7 @@ return {
     {
         "yetone/avante.nvim",
         event = "VeryLazy",
-        lazy = true,
-        version = "*",            -- Set this to "*" to always pull the latest release version, or set it to false to update to the latest code changes.
+        version = "v0.0.23",      -- Never set this value to "*"! Never!
         opts = {
             provider = "copilot", -- Recommend using Claude
             -- WARNING: Since auto-suggestions are a high-frequency operation and therefore expensive,
