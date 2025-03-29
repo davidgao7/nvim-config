@@ -11,6 +11,8 @@ return {
                 markdown = true,
                 help = true,
             },
+            lsp_binary = nil,
+            server_opts_overrides = {},
         },
     },
 
@@ -129,6 +131,41 @@ return {
                 provider = "fzf",
                 -- Options override for custom providers
                 provider_opts = {},
+            },
+            -- enable web search tool
+            copilot = {
+                disable_tools = false,
+            },
+            -- add web search tools
+            web_search_engine = {
+                enabled = true,
+                provider = "google",
+                providers = {
+                    google = {
+                        api_key_name = "GOOGLE_SEARCH_API_KEY",
+                        engine_id_name = "GOOGLE_SEARCH_ENGINE_ID",
+                        extra_request_body = {},
+                        format_response_body = function(body)
+                            if body.items ~= nil then
+                                local jsn = vim
+                                    .iter(body.items)
+                                    :map(
+                                        function(result)
+                                            return {
+                                                title = result.title,
+                                                link = result.link,
+                                                snippet = result.snippet,
+                                            }
+                                        end
+                                    )
+                                    :take(10)
+                                    :totable()
+                                return vim.json.encode(jsn), nil
+                            end
+                            return "", nil
+                        end,
+                    },
+                },
             },
         },
         -- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
