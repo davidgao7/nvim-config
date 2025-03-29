@@ -42,7 +42,8 @@ return {
                 },
             })
 
-            vim.keymap.set("n", "<leader>sh", "<cmd>Noice history<cr>", { desc = "Show notification history" })
+            -- currently <>Noice<> and <>Noice history<> don't work, not sure why...
+            vim.keymap.set("n", "<leader>sh", "<cmd>messages<cr>", { desc = "Show notification history" })
         end,
     },
 }
