@@ -28,13 +28,13 @@ return {
         -- working release
         -- https://github.com/Saghen/blink.cmp/releases
         -- version = "v0.10.0",
-        version = "v0.12.4", -- test v0.11.0, if anything get fucked, back to v10
+        version = "v1.0.0", -- if anything get fucked, back to v0.12.4
         build = "cargo build --release",
         dependencies = {
             "nvim-lua/plenary.nvim",
             "ibhagwan/fzf-lua",
             "moyiz/blink-emoji.nvim",
-            -- 'Kaiser-Yang/blink-cmp-git',
+            'Kaiser-Yang/blink-cmp-git',
             "echasnovski/mini.icons",
             "giuxtaposition/blink-cmp-copilot",
             {
@@ -358,7 +358,7 @@ return {
                     "avante_mentions",
                     "avante_files",
                     "copilot",
-                    -- "git",
+                    "git",
                 },
                 providers = {
                     lazydev = {
@@ -471,13 +471,13 @@ return {
                         module = "blink.compat.source",
                         opts = {},
                     },
-                    -- git = {
-                    --     module = 'blink-cmp-git',
-                    --     name = 'Git',
-                    --     opts = {
-                    --         -- options for the blink-cmp-git
-                    --     },
-                    -- },
+                    git = {
+                        module = 'blink-cmp-git',
+                        name = 'Git',
+                        opts = {
+                            -- options for the blink-cmp-git
+                        },
+                    },
                 },
 
                 -- Function to use when transforming the items before they're returned for all providers
@@ -521,6 +521,7 @@ return {
                 -- Set to 'mono' for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
                 -- Adjusts spacing to ensure icons are aligned
                 -- nerd_font_variant = 'mono',
+
                 kind_icons = {
                     Text = '󰉿',
                     Method = '󰊕',
@@ -554,6 +555,21 @@ return {
                     TypeParameter = '󰬛',
 
                     Copilot = '',
+
+                    openPR = '',
+                    openedPR = '',
+                    closedPR = '',
+                    mergedPR = '',
+                    draftPR = '',
+                    lockedPR = '',
+                    openIssue = '',
+                    openedIssue = '',
+                    reopenedIssue = '',
+                    completedIssue = '',
+                    closedIssue = '',
+                    not_plannedIssue = '',
+                    duplicateIssue = '',
+                    lockedIssue = '',
                 },
             },
         },
