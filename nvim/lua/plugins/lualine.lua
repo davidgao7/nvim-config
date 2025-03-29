@@ -98,13 +98,13 @@ return {
                 table.insert(config.sections.lualine_x, component)
             end
 
-            ins_left {
-                function()
-                    return '▊'
-                end,
-                color = { fg = colors.blue },      -- Sets highlighting of component
-                padding = { left = 0, right = 1 }, -- We don't need space before this
-            }
+            -- ins_left {
+            --     function()
+            --         return '▊'
+            --     end,
+            --     color = { fg = colors.blue },      -- Sets highlighting of component
+            --     padding = { left = 0, right = 1 }, -- We don't need space before this
+            -- }
 
             ins_left {
                 -- mode component
@@ -139,6 +139,38 @@ return {
                 end,
                 padding = { right = 1 },
             }
+
+            ins_left {
+                function()
+                    local mode_map = {
+                        n = 'NORM',
+                        i = 'INSRT',
+                        v = 'VISUAL',
+                        V = 'V-LINE',
+                        [''] = 'V-BLK', -- visual block mode
+                        c = 'CMD  ',
+                        R = 'REPL ',
+                        t = 'TERM ',
+                    }
+                    local mode = vim.fn.mode()
+                    return mode_map[mode] or mode
+                end,
+                color = function()
+                    local mode_color = {
+                        n = colors.red,
+                        i = colors.green,
+                        v = colors.blue,
+                        V = colors.blue,
+                        [''] = colors.blue,
+                        c = colors.magenta,
+                        R = colors.violet,
+                        t = colors.orange,
+                    }
+                    return { fg = mode_color[vim.fn.mode()] or colors.cyan, gui = 'bold' }
+                end,
+                padding = { right = 1 },
+            }
+
 
             ins_left {
                 -- filesize component
