@@ -10,28 +10,32 @@ return {
         },
         keys = {
             {
-                "<leader>nf",
+                "<leader>o",
+                desc = "Annotation+",
+            },
+            {
+                "<leader>of",
                 function()
                     require("neogen").generate({ type = "func" })
                 end,
                 desc = "Generate function annotation",
             },
             {
-                "<leader>nc",
+                "<leader>oc",
                 function()
                     require("neogen").generate({ type = "class" })
                 end,
                 desc = "Generate class annotation",
             },
             {
-                "<leader>nt",
+                "<leader>ot",
                 function()
                     require("neogen").generate({ type = "type" })
                 end,
                 desc = "Generate type annotation",
             },
             {
-                "<leader>nF",
+                "<leader>oF",
                 function()
                     require("neogen").generate({ type = "file" })
                 end,
