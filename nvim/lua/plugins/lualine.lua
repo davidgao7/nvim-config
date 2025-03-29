@@ -1,6 +1,6 @@
 -- Custom Copilot Status Component
 local function copilot_status()
-    local ok, clients = pcall(vim.lsp.get_active_clients)
+    local ok, clients = pcall(vim.lsp.get_clients)
     if not ok or not clients then
         return ""
     end
