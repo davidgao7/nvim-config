@@ -112,7 +112,7 @@ vim.api.nvim_create_autocmd("CursorHold", {
     group = LspDocumentHighlightGroup,
     pattern = "*",
     callback = function()
-        local clients = vim.lsp.get_active_clients({ bufnr = vim.api.nvim_get_current_buf() })
+        local clients = vim.lsp.get_clients({ bufnr = vim.api.nvim_get_current_buf() })
         for _, client in ipairs(clients) do
             if client.server_capabilities.documentHighlightProvider then
                 vim.lsp.buf.document_highlight()
