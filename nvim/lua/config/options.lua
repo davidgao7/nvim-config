@@ -15,7 +15,7 @@ vim.g.python3_host_prog = ".pyenv/versions/neovim3/bin/python"
 -- show relative line numbers
 vim.opt.relativenumber = true
 -- set cursor gui to be block always
-vim.opt.guicursor = "n-v-c-sm:block,i-ci-ve:block,r-cr-o:block"
+-- vim.opt.guicursor = "n-v-c-sm:block,i-ci-ve:block,r-cr-o:block"
 -- hightlight current line
 vim.opt.cursorline = true
 -- show the file path in the title
