@@ -28,7 +28,7 @@ return {
         -- working release
         -- https://github.com/Saghen/blink.cmp/releases
         -- version = "v0.10.0",
-        version = "v1.0.0", -- if anything get fucked, back to v0.12.4
+        version = "v1.1.1", -- if anything get fucked, back to v0.12.4
         build = "cargo build --release",
         dependencies = {
             "nvim-lua/plenary.nvim",
@@ -490,7 +490,7 @@ return {
             },
             cmdline = {
                 enabled = true,
-                keymap = nil, -- Inherits from top level `keymap` config when not set
+                keymap = { preset = 'cmdline' },
                 sources = function()
                     local type = vim.fn.getcmdtype()
                     -- Search forward and backward
@@ -502,14 +502,23 @@ return {
                 completion = {
                     trigger = {
                         show_on_blocked_trigger_characters = {},
-                        show_on_x_blocked_trigger_characters = nil, -- Inherits from top level `completion.trigger.show_on_blocked_trigger_characters` config when not set
+                        show_on_x_blocked_trigger_characters = {},
+                    },
+                    list = {
+                        selection = {
+                            -- When `true`, will automatically select the first item in the completion list
+                            preselect = true,
+                            -- When `true`, inserts the completion item automatically when selecting it
+                            auto_insert = true,
+                        },
                     },
                     menu = {
-                        auto_show = nil, -- Inherits from top level `completion.menu.auto_show` config when not set
-                        draw = {
-                            columns = { { 'label', 'label_description', gap = 1 } },
-                        },
-                    }
+                        auto_show = true,
+                        -- draw = {
+                        --     columns = { { 'label', 'label_description', gap = 1 } },
+                        -- },
+                    },
+                    ghost_text = { enabled = false }
                 }
             },
             appearance = {
